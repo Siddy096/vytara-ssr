@@ -1,11 +1,12 @@
+"use client";
+
 import { useState } from 'react';
 import {
   Calendar, Users, Stethoscope, Pill, Activity, Building2, Shield,
   AlertCircle, Sparkles, X, Phone, Clock, Star, ChevronRight, FileText, Edit, Trash2,
   ChevronLeft, Menu
 } from 'lucide-react';
-import logoImage from '../assets/vytara logo.png';
-import { MedicalInfoForm } from './MedicalInfoForm';
+import { MedicalInfoForm } from '@/components/MedicalInfoForm';
 import { UserData, Appointment } from '../App';
 
 type Props = {
@@ -188,11 +189,12 @@ export function HomePage({
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-md p-2">
-                <img 
-                  src={logoImage} 
-                  alt="Vytara Logo" 
-                  className="w-full h-full object-contain"
+                <img
+                  src="/assets/vytara-logo.png"
+                  alt="Vytara Logo"
+                  className="h-8 w-auto"
                 />
+
               </div>
               <h1 className="hidden sm:block text-xl font-bold text-white tracking-wide">Vytara</h1>
             </div>

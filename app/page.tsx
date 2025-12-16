@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   ChevronRight,
@@ -11,14 +14,10 @@ import {
   Clock
 } from 'lucide-react';
 
-const logoImage = new URL('../assets/vytara logo.png', import.meta.url).href;
+const logoImage = '/assets/vytara-logo.png';
 
-type Props = {
-  onLogin?: () => void;
-  onGetStarted?: () => void;
-};
-
-export default function LandingPage({ onLogin, onGetStarted }: Props) {
+export default function LandingPage() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -207,7 +206,7 @@ export default function LandingPage({ onLogin, onGetStarted }: Props) {
             </button>
 
             <button
-              onClick={onLogin}
+              onClick={() => router.push('/login')}
               style={{
                 marginLeft: 6,
                 background: 'transparent',
@@ -221,7 +220,7 @@ export default function LandingPage({ onLogin, onGetStarted }: Props) {
             </button>
 
             <button
-              onClick={onGetStarted}
+              onClick={() => router.push('/login')}
               style={{
                 marginLeft: 8,
                 background: `linear-gradient(90deg, ${COLORS.amberStart}, ${COLORS.amberEnd})`,
@@ -233,8 +232,8 @@ export default function LandingPage({ onLogin, onGetStarted }: Props) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8
-              }}
+                gap: 8,
+              }} 
             >
               Get Started
               <ArrowRight style={{ width: 14, height: 14 }} />
@@ -332,7 +331,7 @@ export default function LandingPage({ onLogin, onGetStarted }: Props) {
             }}
           >
             <button
-              onClick={onGetStarted}
+              onClick={() => router.push('/login')}
               style={{
                 background: `linear-gradient(90deg, ${COLORS.amberStart}, ${COLORS.amberEnd})`,
                 color: '#07121B',

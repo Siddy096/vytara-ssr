@@ -3,20 +3,8 @@
 import { useState } from 'react';
 // import { X } from 'lucide-react'; // Commented out if not used
 import { useRouter } from 'next/navigation'; // <--- CHANGED: Used for redirection
-import MedicalInfoForm from '@/components/MedicalInfoForm'; // <--- CHANGED: Point to correct components folder
-
-// <--- CHANGED: Defined types locally since App.tsx is gone
-interface MedicalInfo {
-  // Add specific fields here if you know them, e.g., bloodType: string;
-  [key: string]: any; 
-}
-
-interface UserData {
-  username: string;
-  email?: string;
-  password?: string;
-  medicalInfo?: MedicalInfo;
-}
+import { MedicalInfoForm } from '@/components/MedicalInfoForm'; // <--- CHANGED: Point to correct components folder
+import { MedicalInfo, UserData } from '@/lib/types';
 
 export default function LoginPage() { // <--- CHANGED: Removed props (Pages don't take props)
   const router = useRouter(); // <--- CHANGED: Initialize router
@@ -29,7 +17,8 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
   const [users, setUsers] = useState<UserData[]>([]);
 
   // <--- CHANGED: Using a placeholder for the logo for now
-  const logoImage = "/assets/logo.png"; 
+  const logoImage = "/assets/vytara-logo.png";
+ 
 
   const validateLogin = () => {
     const newErrors: { [key: string]: string } = {};
@@ -76,12 +65,12 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
     }
   };
 
-  const handleMedicalInfoSubmit = (medicalInfo: MedicalInfo) => {
+  const handleMedicalInfoSubmit = (userData: UserData) => {
     const newUser: UserData = {
+      ...userData,
       username: signupData.username,
       email: signupData.email,
       password: signupData.password,
-      medicalInfo,
     };
     setUsers([...users, newUser]);
     setModalType('login');
@@ -103,10 +92,13 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
             
             <div className="p-8">
               <div className="flex justify-center mb-6">
-                {/* <img src={logoImage} alt="Vytara Logo" className="h-24 w-24 object-contain" /> */}
-                <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center text-xs">Logo Here</div>
-              </div>
-              
+                <img
+                  src={logoImage}
+                  alt="Vytara Logo"
+                  className="h-24 w-24 object-contain"
+                />
+              </div>  
+
               <h1 className="text-center text-[#309898] mb-2">Vytara</h1>
               <p className="text-center text-gray-600 mb-6">Your Health Records, Simplified</p>
 
@@ -165,28 +157,75 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
 
               {modalType === 'signup' && (
                 <form onSubmit={handleSignup} className="space-y-4">
-                   {/* Signup form inputs - kept same as your original */}
+
                   <div>
                     <label className="block text-gray-700 mb-2">Username</label>
                     <input
                       type="text"
                       value={signupData.username}
-                      onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#309898] focus:outline-none transition-colors"
-                      placeholder="Choose a username"
+                      onChange={(e) =>
+                        setSignupData({ ...signupData, username: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
                     />
-                    {errors.username && <p className="text-red-500 mt-1">{errors.username}</p>}
+                    {errors.username && (
+                      <p className="text-red-500 mt-1">{errors.username}</p>
+                    )}
                   </div>
-                  {/* ... other signup inputs omitted for brevity, keep your original ones ... */}
-                  
-                   <button
+
+                  <div>
+                    <label className="block text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={signupData.email}
+                      onChange={(e) =>
+                        setSignupData({ ...signupData, email: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 mt-1">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 mb-2">Password</label>
+                    <input
+                      type="password"
+                      value={signupData.password}
+                      onChange={(e) =>
+                        setSignupData({ ...signupData, password: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                    />
+                    {errors.password && (
+                      <p className="text-red-500 mt-1">{errors.password}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 mb-2">Confirm Password</label>
+                    <input
+                      type="password"
+                      value={signupData.confirmPassword}
+                      onChange={(e) =>
+                        setSignupData({ ...signupData, confirmPassword: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                    />
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 mt-1">{errors.confirmPassword}</p>
+                    )}
+                  </div>
+
+                  <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-[#FF8000] to-[#FF8000]/90 text-white py-3 rounded-xl hover:shadow-lg transition-all"
+                    className="w-full bg-gradient-to-r from-[#FF8000] to-[#FF8000]/90 text-white py-3 rounded-xl"
                   >
                     Sign Up
                   </button>
-                  
-                   <div className="text-center mt-4">
+
+                  <div className="text-center mt-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -198,19 +237,21 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
                       Back to Login
                     </button>
                   </div>
+
                 </form>
               )}
+              
 
               {modalType === 'medical' && (
                 <MedicalInfoForm
-                  onSubmit={handleMedicalInfoSubmit}
-                  onBack={() => setModalType('signup')}
+                  onComplete={handleMedicalInfoSubmit}
+                  onClose={() => setModalType('signup')}
                 />
               )}
             </div>
           </div>
         </div>
-      )}
+      )} 
     </div>
   );
 }

@@ -1,7 +1,9 @@
+"use client";
+
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
-import { UserData } from '../App';
-import logoImage from 'figma:asset/3356ef9e7b4ecad1a9839c039785983e296f414d.png';
+import type { UserData } from '@/types/user';
+
 
 type Props = {
   onComplete: (data: UserData) => void;
@@ -299,7 +301,13 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
         )}
 
         <div className="flex justify-center mb-3">
-          <img src={logoImage} alt="Vytara Logo" className="w-28 h-28" />
+          <img
+            src="/assets/vytara-logo.png"
+            alt="Vytara Logo"
+            width={32}
+            height={32}
+          />
+
         </div>
         
         <h2 className="text-center text-[#309898] mb-1">Medical Information</h2>

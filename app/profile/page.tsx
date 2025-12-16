@@ -1,12 +1,18 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import {
-  User, Mail, Phone, Activity, FileText, Edit2,
-  Download, Droplet, TrendingUp, Calculator, CalendarCheck,
+  User, Mail, Phone, Activity, Edit2,
+  Download, Droplet, Calculator, CalendarCheck,
   ChevronDown, Users, Menu, X, Pill, History, LogOut, Calendar
 } from 'lucide-react';
-import { UserData } from '../App';
-import logoImage from '../assets/vytara logo.png';
-import { MedicalInfoForm } from './MedicalInfoForm';
+import { UserData, DisplayUser } from '@/lib/types';
+import { MedicalInfoForm } from '@/components/MedicalInfoForm';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+
+// Mock logo image
+const logoImage = '/logo.svg'; // Replace with actual logo path
 
 // --- MOCK DATA ---
 const MOCK_HISTORY_DATA = [
@@ -23,37 +29,89 @@ const MOCK_FAMILY_PROFILES = [
   { id: 'user_004', name: 'Rohan (Brother)', relation: 'Sibling', gender: 'Male', age: '12', blood: 'A+', conditions: [] }
 ];
 
-type Props = {
-  userData: UserData;
-  onNavigateToHome: () => void;
-  onNavigateToVault: () => void;
-  onLogout: () => void;
-  onUpdateUserData: (data: UserData) => void;
+// Mock user data for the page
+const MOCK_USER_DATA: UserData = {
+  username: 'john_doe',
+  email: 'john.doe@example.com',
+  password: 'password123',
+  personalInfo: {
+    fullName: 'John Doe',
+    dateOfBirth: '1990-01-01',
+    gender: 'Male',
+    bloodGroup: 'O+',
+    height: '175',
+    weight: '70',
+    contactNumber: '+1234567890',
+    emergencyContacts: [
+      { name: 'Jane Doe', phone: '+1234567891', relation: 'Wife' },
+      { name: 'Bob Doe', phone: '+1234567892', relation: 'Brother' }
+    ],
+  },
+  currentMedical: {
+    conditions: ['Hypertension'],
+    medications: [
+      { name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', course: 'Ongoing', purpose: 'Blood pressure control' }
+    ],
+    allergies: ['Penicillin'],
+    treatments: ['Regular exercise'],
+    doctors: [
+      { name: 'Dr. Sarah Smith', phone: '+1234567893', speciality: 'Cardiology' }
+    ],
+  },
+  pastMedical: {
+    diseases: ['Chickenpox'],
+    surgeries: [{ name: 'Appendectomy', date: '2010-05-15' }],
+    hospitalizations: [{ reason: 'Appendicitis', date: '2010-05-15' }],
+    injuries: [],
+    childhoodIllnesses: ['Chickenpox'],
+    pastMedications: [],
+    longTermTreatments: [],
+  },
+  familyHistory: [
+    { disease: 'Hypertension', relation: 'Father' },
+    { disease: 'Diabetes', relation: 'Mother' }
+  ],
 };
 
-export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onLogout, onUpdateUserData }: Props) {
+export default function ProfilePage() {
+  const router = useRouter();
   const [showEditForm, setShowEditForm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [displayUser, setDisplayUser] = useState<any>(userData); 
+  const [displayUser, setDisplayUser] = useState<DisplayUser>(MOCK_USER_DATA);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userData, setUserData] = useState<UserData>(MOCK_USER_DATA);
+
+  // Mock navigation functions
+  const onNavigateToHome = () => router.push('/');
+  const onNavigateToVault = () => router.push('/vault');
+  const onLogout = () => {
+    // Mock logout - clear any stored data and navigate to login
+    localStorage.removeItem('userData');
+    router.push('/login');
+  };
+
+  // Mock update user data function
+  const onUpdateUserData = (updatedData: UserData) => {
+    setUserData(updatedData);
+  };
 
   useEffect(() => {
     if (!displayUser.isMock) setDisplayUser(userData);
-  }, [userData]);
+  }, [userData, displayUser.isMock]);
 
   const handleProfileSwitch = (profile: any) => {
     if (profile === 'me') {
-        setDisplayUser(userData); 
+        setDisplayUser(userData);
     } else {
-        const mockUser: any = {
-            ...userData, 
+        const mockUser: DisplayUser = {
+            ...userData,
             isMock: true,
             personalInfo: {
                 ...userData.personalInfo,
                 fullName: profile.name,
                 gender: profile.gender,
                 bloodGroup: profile.blood,
-                dateOfBirth: new Date(new Date().getFullYear() - parseInt(profile.age), 0, 1).toISOString(), 
+                dateOfBirth: new Date(new Date().getFullYear() - parseInt(profile.age), 0, 1).toISOString(),
             },
             currentMedical: {
                 ...userData.currentMedical,
@@ -76,7 +134,7 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
 
   // --- BMI LOGIC (Safeguarded) ---
   const calculateBMI = () => {
-    if ((displayUser as any).isMock) return '24.5';
+    if (displayUser.isMock) return '24.5';
     let h = parseFloat(displayUser.personalInfo.height || '0');
     const w = parseFloat(displayUser.personalInfo.weight || '0');
 
@@ -96,11 +154,11 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
   };
 
   const bmi = calculateBMI();
-  const visitCount = (displayUser as any).isMock ? 12 : historicalEvents.length;
+  const visitCount = displayUser.isMock ? 12 : historicalEvents.length;
 
   const handleFormSubmit = (updatedData: UserData) => {
     onUpdateUserData(updatedData);
-    if (!(displayUser as any).isMock) setDisplayUser(updatedData); 
+    if (!displayUser.isMock) setDisplayUser(updatedData);
     else alert("You cannot edit Family profiles in this view.");
     setShowEditForm(false);
   };
