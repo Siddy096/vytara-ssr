@@ -29,7 +29,7 @@ export default function Verified() {
         {/* Button */}
         <span
           onClick={() => {router.push('/medicalinfoform-1')}}
-          className="block w-full bg-gradient-to-r from-[#309898] to-[#FF8000] text-white py-3 rounded-lg hover:shadow-lg transition transform hover:scale-105 text-center font-semibold"
+          className="block w-full bg-gradient-to-r from-[#309898] to-[#FF8000] text-white py-3 rounded-lg hover:shadow-lg transition transform hover:scale-105 text-center font-semibold cursor-pointer"
         >
           Fill Medical Form
         </span>

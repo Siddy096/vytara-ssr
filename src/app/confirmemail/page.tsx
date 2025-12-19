@@ -41,7 +41,7 @@ export default function ConfirmationEmailPage() {
         </div>
 
         <div className="text-center mt-6">
-          <button className="bg-gradient-to-r from-[#309898] to-[#FF8000] text-white px-6 py-3 rounded-lg hover:shadow-lg transition transform hover:scale-105" onClick={() => window.location.href = "https://www.gmail.com"}>
+          <button className="bg-gradient-to-r from-[#309898] to-[#FF8000] text-white px-6 py-3 rounded-lg hover:shadow-lg transition transform hover:scale-105 cursor-pointer" onClick={() => window.location.href = "https://www.gmail.com"}>
              Open Gmail
           </button>
 

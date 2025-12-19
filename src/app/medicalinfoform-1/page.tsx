@@ -1,26 +1,12 @@
-'use client'
+'use client';
 
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
-import logoImage from "figma:asset/8e191f727b2ef8023e7e4984e9036f679c3d3038.png";
-import { useRouter } from 'next/navigation';    
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/createClient";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function MedicalInfoFormUI() {
-
-  const [userId , setUserId] = useState('');
-
-  useEffect(() => {
-    async function getUser() {
-      const { data } = await supabase.auth.getUser();
-      if (data.user){
-        setUserId(data.user.id)
-      } 
-    }
-    getUser();
-  }, [])
-  
   const router = useRouter();
 
   const [fullName, setFullName] = useState("");
@@ -28,42 +14,49 @@ export default function MedicalInfoFormUI() {
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("");
   const [address, setAddress] = useState("");
-  const [emergencyContact, setEmergencyContact] = useState([
-    { name: "", phone: "", relation: "" },
-  ]);
-
   const [bloodGroup, setBloodGroup] = useState("");
 
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [bmi, setBmi] = useState("");
 
+  const [emergencyContact, setEmergencyContact] = useState([
+    { name: "", phone: "", relation: "" },
+  ]);
+
+  // BMI calculation
   useEffect(() => {
     const h = Number(height);
     const w = Number(weight);
-    if (!h || !w){
+
+    if (!h || !w) {
       setBmi("");
       return;
     }
-    const height_in_m = h / 100;
-    const calc_bmi = w / (height_in_m * height_in_m);
-    if(!isNaN(calc_bmi) && isFinite(calc_bmi)){
-      setBmi(calc_bmi.toFixed(1));
+
+    const heightInMeters = h / 100;
+    const calculatedBMI = w / (heightInMeters * heightInMeters);
+
+    if (!isNaN(calculatedBMI) && isFinite(calculatedBMI)) {
+      setBmi(calculatedBMI.toFixed(1));
     }
   }, [height, weight]);
 
+  // Submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // const height_in_m = Number(height) / 100;
-    // const calc_bmi = Number(weight) / (height_in_m * height_in_m);
-    // setBmi(calc_bmi.toFixed(1));
+    // 🔐 Always get auth user directly
+    const { data: { user } } = await supabase.auth.getUser();
 
-    const birthDate = new Date(dob);
+    if (!user) {
+      alert("User session not ready. Please try again.");
+      return;
+    }
 
     const personalData = {
       fullName,
-      dob: birthDate.toString(),
+      dob,
       gender,
       address,
       emergencyContact,
@@ -71,44 +64,44 @@ export default function MedicalInfoFormUI() {
       height,
       weight,
       bmi,
+      bloodGroup,
     };
 
     const { error } = await supabase
       .from("profiles")
-      .insert({
-        user_id: userId, 
-        personal: personalData 
-      })
+      .upsert({
+        user_id: user.id,   // ✅ ALWAYS VALID
+        personal: personalData,
+      });
 
     if (error) {
-      alert("Error: " + error.message);
+      console.error(error);
+      alert(error.message);
     } else {
       router.push("/medicalinfoform-2");
     }
   };
 
   return (
-    
     <div className="min-h-screen bg-gradient-to-br from-[#309898]/20 via-white to-[#FF8000]/10 flex items-center justify-center p-4">
-    <form
-      onSubmit={handleSubmit}
-      className="relative max-w-3xl w-full bg-white rounded-xl shadow-lg overflow-hidden p-6"
-    >
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#309898] to-[#FF8000]"></div>
-        {/* Logo */}
+      <form
+        onSubmit={handleSubmit}
+        className="relative max-w-3xl w-full bg-white rounded-xl shadow-lg overflow-hidden p-6"
+      >
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#309898] to-[#FF8000]" />
+
         <div className="flex justify-center mb-4">
-            <Image
-                src="/vytara-logo.png"
-                alt="Vytara Logo"
-                width={96}
-                height={96}
-                className='w-24 h-24'
-                priority
-            />
+          <Image
+            src="/vytara-logo.png"
+            alt="Vytara Logo"
+            width={96}
+            height={96}
+            priority
+          />
         </div>
 
         <h2 className="text-center text-[#309898] mb-2">Medical Information</h2>
-        <p className="text-center text-gray-600 mb-6">Section 1/4</p>
+        <p className="text-center text-gray-600 mb-6">Section 1 / 4</p>
 
         {/* Main Container */}
         <div className="min-h-[500px] space-y-6">
@@ -318,20 +311,19 @@ export default function MedicalInfoFormUI() {
           <button
             type="button"
             onClick={() => router.push("/signup")}
-            className="flex items-center gap-2 text-[#309898] cursor-pointer"
+            className="flex items-center gap-2 text-[#309898]"
           >
             <ChevronLeft /> Previous
           </button>
 
           <button
             type="submit"
-            className="flex items-center gap-2 bg-[#FF8000] text-white px-6 py-2 rounded-lg hover:bg-[#309898] cursor-pointer"
+            className="flex items-center gap-2 bg-[#FF8000] text-white px-6 py-2 rounded-lg hover:bg-[#309898]"
           >
             Next <ChevronRight />
           </button>
         </div>
-
-    </form>
+      </form>
     </div>
   );
 }
