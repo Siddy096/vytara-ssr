@@ -32,7 +32,7 @@ export default function MedicalInfoFormUI() {
       const { data, error } = await supabase.auth.getUser();
 
       if (error) { 
-        console.log("Auth Error", erorr)
+        console.log("Auth Error", error)
       }
 
       setUser(data.user);
