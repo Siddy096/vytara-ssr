@@ -32,7 +32,7 @@ export default function SignupPage() {
         email, 
         password,
         options: {
-          emailRedirectTo: "http://vytara-official/verified"
+          emailRedirectTo: "https://vytara-official.vercel.app/verified"
         }
       });
       if (error) throw error;

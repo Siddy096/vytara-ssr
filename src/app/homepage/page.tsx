@@ -7,7 +7,10 @@ import Image from 'next/image';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#003B46] via-[#006770] via-[#00838B] to-[#00A3A9] pb-10 font-sans">
+    <div className="bg-gradient-to-r
+from-[hsla(169,100%,50%,1)]
+via-[hsla(150,75%,70%,1)]
+to-[hsla(67,70%,75%,1)]">
 
       {/* Header */}
       <header 
