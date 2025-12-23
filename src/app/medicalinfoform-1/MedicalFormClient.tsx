@@ -126,7 +126,6 @@ export default function MedicalInfoFormUI() {
   const [bmi, setBmi] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [address, setAddress] = useState("");
-  const [loadingUser, setLoadingUser] = useState(true);
   const [emergencyContact, setEmergencyContact] = useState([
     { name: "", phone: "", relation: "" },
   ]);
@@ -147,8 +146,8 @@ export default function MedicalInfoFormUI() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    setLoadingUser(false)
+    
+    console.log("SUBMIT FIRED")
 
     if (!userId) {
       alert("User session not ready, Please wait");
@@ -427,8 +426,7 @@ export default function MedicalInfoFormUI() {
 
           <button
             type="submit"
-            disabled={loadingUser}
-            className="flex items-center gap-2 bg-[#FF8000] text-white px-6 py-2 rounded-lg cursor-hover">
+            className="flex items-center gap-2 bg-[#FF8000] text-white px-6 py-2 rounded-lg cursor-pointer">
             Next
           </button>
         </div>
