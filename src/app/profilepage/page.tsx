@@ -6,9 +6,23 @@ import {
   ChevronDown, Users, Menu, X, Pill, History, LogOut, Calendar, Locate
 } from 'lucide-react';
 import { supabase } from '@/lib/createClient';
-import { use, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export default function ProfilePageUI() {
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent){
+      if(menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [userId, setUserId] = useState("");
 
@@ -179,10 +193,46 @@ export default function ProfilePageUI() {
             </div>
             
             {/* Menu Button */}
-            <div className="relative">
-              <button className="p-2 text-white hover:bg-white/20 rounded-lg flex items-center justify-center transition border border-white/30 bg-white/10 backdrop-blur-sm">
-                <Menu className="w-7 h-7" />
+            <div className="relative" ref={menuRef}>
+              <button 
+                className="p-2 text-white hover:bg-white/20 rounded-lg flex items-center justify-center transition border border-white/30 bg-white/10 backdrop-blur-sm"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >  
+                {menuOpen ? <X className='w-7 h-7'/> : <Menu className="w-7 h-7" />}
               </button>
+              {menuOpen && (
+                <div className='absolute right-0 mt-2 w-44 rounded-xl border border-white/20 bg-black/70 backdrop-blur-md shadow-lg overflow-hidden z-50'>
+
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className='w-full px-4 py-3 text-left text-white hover:bg-white/10 transition'
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className='w-full px-4 py-3 text-left text-white hover:bg-white/10 transition'
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className='w-full px-4 py-3 text-left text-white hover:bg-white/10 transition'
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-white/10 transition flex items-center gap-2"
+                  >
+                    <LogOut className='w-4 h-4' />
+                    Logout
+                  </button>
+                </div>  
+              )}
             </div>
           </div>
         </div>
