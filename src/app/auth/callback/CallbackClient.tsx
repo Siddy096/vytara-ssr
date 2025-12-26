@@ -24,7 +24,7 @@ export default function CallbackClient() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.replace('/login');
+        router.replace('/auth/login');
         return;
       }
 
@@ -35,7 +35,7 @@ export default function CallbackClient() {
         .maybeSingle();
 
       if (!profile || !profile.profile_complete) {
-        router.replace('/complete-profile');
+        router.replace('/auth/complete-profile');
         return;
       }
 
