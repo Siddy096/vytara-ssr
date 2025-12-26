@@ -8,30 +8,42 @@ export default function CallbackClient() {
   const router = useRouter();
 
   useEffect(() => {
-    async function checkProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
+    const handleOAuth = async () => {
+      // 🔑 IMPORTANT: finalize OAuth session
+      const { error: exchangeError } =
+        await supabase.auth.exchangeCodeForSession(window.location.href);
 
-      if (!user) {
-        router.push('/login');
+      if (exchangeError) {
+        router.replace('/login');
         return;
       }
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single();
+      // ✅ Now session is guaranteed
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!profile) {
+      if (!user) {
+        router.replace('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('profile_complete')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile || !profile.profile_complete) {
         router.replace('/complete-profile');
         return;
       }
 
-      router.push('/homepage');
-    }
+      router.replace('/homepage');
+    };
 
-    checkProfile();
+    handleOAuth();
   }, [router]);
 
-  return <p>Checking account...</p>;
+  return <p>Signing you in...</p>;
 }

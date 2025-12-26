@@ -55,7 +55,7 @@ export default function LoginSignupModal() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'http://vytara-official/auth/callback',
+        redirectTo: 'http://vytara-official.vercel.app/auth/callback',
       },
     });
 
