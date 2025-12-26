@@ -30,7 +30,7 @@ export default function CallbackClient() {
         return;
       }
 
-      router.replace('/homepage');
+      router.replace('/app/homepage');
     }
 
     checkProfile();
