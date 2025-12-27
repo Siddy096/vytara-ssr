@@ -74,7 +74,7 @@ export function PharmacyModal({ onClose }: Props) {
               placeholder="Search pharmacy or medicine..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+              className="w-full pl-12 pr-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
             />
           </div>
         </div>

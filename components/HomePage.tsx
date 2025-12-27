@@ -4,7 +4,13 @@ import {
   AlertCircle, Sparkles, X, Phone, Clock, Star, ChevronRight, FileText, Edit, Trash2,
   ChevronLeft, Menu
 } from 'lucide-react';
-import logoImage from '../assets/vytara logo.png';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+
+
+
+
 import { MedicalInfoForm } from './MedicalInfoForm';
 import { UserData, Appointment } from '../App';
 
@@ -32,6 +38,7 @@ export function HomePage({
   onDeleteAppointment,
   onUpdateEmergencyContacts
 }: Props) {
+  const router = useRouter(); 
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryText, setSummaryText] = useState('');
@@ -189,10 +196,11 @@ export function HomePage({
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-md p-2">
                 <img 
-                  src={logoImage} 
-                  alt="Vytara Logo" 
-                  className="w-full h-full object-contain"
-                />
+  src="/assets/vytara-logo.png"
+  alt="Vytara Logo" 
+  className="w-full h-full object-contain"
+/>
+
               </div>
               <h1 className="hidden sm:block text-xl font-bold text-white tracking-wide">Vytara</h1>
             </div>
@@ -222,17 +230,25 @@ export function HomePage({
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
                     <button
-                      onClick={() => { onNavigateToVault(); setIsMenuOpen(false); }}
-                      className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-[#006770] flex items-center gap-3 transition"
-                    >
-                      <Shield className="w-4 h-4" /> Vault
-                    </button>
+  onClick={() => {
+    router.push('/vault');
+    setIsMenuOpen(false);
+  }}
+  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-[#006770] flex items-center gap-3 transition"
+>
+  <Shield className="w-4 h-4" /> Vault
+</button>
+
                     <button
-                      onClick={() => { onNavigateToProfile(); setIsMenuOpen(false); }}
-                      className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-[#006770] flex items-center gap-3 transition"
-                    >
-                      <Users className="w-4 h-4" /> Profile
-                    </button>
+  onClick={() => {
+    router.push('/profile');
+    setIsMenuOpen(false);
+  }}
+  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-[#006770] flex items-center gap-3 transition"
+>
+  <Users className="w-4 h-4" /> Profile
+</button>
+
                   </div>
                 )}
               </div>

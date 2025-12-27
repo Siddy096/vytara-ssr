@@ -136,7 +136,7 @@ export function LoginSignupModal({ onLoginSuccess, onClose, initialMode = 'login
                 type="text"
                 value={loginData.username}
                 onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition text-black"
                 placeholder="Enter your username"
               />
               {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
@@ -148,7 +148,7 @@ export function LoginSignupModal({ onLoginSuccess, onClose, initialMode = 'login
                 type="password"
                 value={loginData.password}
                 onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition text-black"
                 placeholder="Enter your password"
               />
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
@@ -187,7 +187,7 @@ export function LoginSignupModal({ onLoginSuccess, onClose, initialMode = 'login
                 type="text"
                 value={signupData.username}
                 onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition text-black"
                 placeholder="Choose a username"
               />
               {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
@@ -199,7 +199,7 @@ export function LoginSignupModal({ onLoginSuccess, onClose, initialMode = 'login
                 type="email"
                 value={signupData.email}
                 onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition text-black"
                 placeholder="Enter your email"
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
@@ -211,7 +211,7 @@ export function LoginSignupModal({ onLoginSuccess, onClose, initialMode = 'login
                 type="password"
                 value={signupData.password}
                 onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none transition text-black"
                 placeholder="Create a password"
               />
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}

@@ -1,0 +1,4 @@
+- [ ] Update theme colors in app/login/page.tsx to #14b8a6 and #134E4A
+- [ ] Add plasma background to login form, signup form, and medical info form in app/login/page.tsx
+- [ ] Update theme colors in components/MedicalInfoForm.tsx to #14b8a6 and #134E4A
+- [ ] Add plasma background to the medical info form modal in components/MedicalInfoForm.tsx

@@ -1,8 +1,216 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import type { UserData } from '@/types/user';
+
+/* ========================= PLASMA BACKGROUND ========================= */
+import { Renderer, Program, Mesh, Triangle } from 'ogl';
+
+interface PlasmaProps {
+  color?: string;
+  speed?: number;
+  direction?: 'forward' | 'reverse' | 'pingpong';
+  scale?: number;
+  opacity?: number;
+  mouseInteractive?: boolean;
+}
+
+const hexToRgb = (hex: string): [number, number, number] => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return [1, 0.5, 0.2];
+  return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
+};
+
+const vertex = `#version 300 es
+precision highp float;
+in vec2 position;
+in vec2 uv;
+out vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position, 0.0, 1.0);
+}
+`;
+
+const fragment = `#version 300 es
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform vec3 uCustomColor;
+uniform float uUseCustomColor;
+uniform float uSpeed;
+uniform float uDirection;
+uniform float uScale;
+uniform float uOpacity;
+uniform vec2 uMouse;
+uniform float uMouseInteractive;
+out vec4 fragColor;
+
+void mainImage(out vec4 o, vec2 C) {
+  vec2 center = iResolution.xy * 0.5;
+  C = (C - center) / uScale + center;
+
+  vec2 mouseOffset = (uMouse - center) * 0.0002;
+  C += mouseOffset * length(C - center) * step(0.5, uMouseInteractive);
+
+  float i, d, z, T = iTime * uSpeed * uDirection;
+  vec3 O, p, S;
+
+  for (vec2 r = iResolution.xy, Q; ++i < 60.; O += o.w/d*o.xyz) {
+    p = z*normalize(vec3(C-.5*r,r.y));
+    p.z -= 4.;
+    S = p;
+    d = p.y-T;
+
+    p.x += .4*(1.+p.y)*sin(d + p.x*0.1)*cos(.34*d + p.x*0.05);
+    Q = p.xz *= mat2(cos(p.y+vec4(0,11,33,0)-T));
+    z+= d = abs(sqrt(length(Q*Q)) - .25*(5.+S.y))/3.+8e-4;
+    o = 1.+sin(S.y+p.z*.5+S.z-length(S-p)+vec4(2,1,0,8));
+  }
+
+  o.xyz = tanh(O/1e4);
+}
+
+bool finite1(float x){ return !(isnan(x) || isinf(x)); }
+vec3 sanitize(vec3 c){
+  return vec3(
+    finite1(c.r) ? c.r : 0.0,
+    finite1(c.g) ? c.g : 0.0,
+    finite1(c.b) ? c.b : 0.0
+  );
+}
+
+void main() {
+  vec4 o = vec4(0.0);
+  mainImage(o, gl_FragCoord.xy);
+  vec3 rgb = sanitize(o.rgb);
+
+  float intensity = (rgb.r + rgb.g + rgb.b) / 3.0;
+  vec3 customColor = intensity * uCustomColor;
+  vec3 finalColor = mix(rgb, customColor, step(0.5, uUseCustomColor));
+
+  float alpha = length(rgb) * uOpacity;
+  fragColor = vec4(finalColor, alpha);
+}`;
+
+export const Plasma: React.FC<PlasmaProps> = ({
+  color = '#ffffff',
+  speed = 1,
+  direction = 'forward',
+  scale = 1,
+  opacity = 1,
+  mouseInteractive = true
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mousePos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const useCustomColor = color ? 1.0 : 0.0;
+    const customColorRgb = color ? hexToRgb(color) : [1, 1, 1];
+
+    const directionMultiplier = direction === 'reverse' ? -1.0 : 1.0;
+
+    const renderer = new Renderer({
+      webgl: 2,
+      alpha: true,
+      antialias: false,
+      dpr: Math.min(window.devicePixelRatio || 1, 2)
+    });
+    const gl = renderer.gl;
+    const canvas = gl.canvas as HTMLCanvasElement;
+    canvas.style.display = 'block';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    containerRef.current.appendChild(canvas);
+
+    const geometry = new Triangle(gl);
+
+    const program = new Program(gl, {
+      vertex: vertex,
+      fragment: fragment,
+      uniforms: {
+        iTime: { value: 0 },
+        iResolution: { value: new Float32Array([1, 1]) },
+        uCustomColor: { value: new Float32Array(customColorRgb) },
+        uUseCustomColor: { value: useCustomColor },
+        uSpeed: { value: speed * 0.4 },
+        uDirection: { value: directionMultiplier },
+        uScale: { value: scale },
+        uOpacity: { value: opacity },
+        uMouse: { value: new Float32Array([0, 0]) },
+        uMouseInteractive: { value: mouseInteractive ? 1.0 : 0.0 }
+      }
+    });
+
+    const mesh = new Mesh(gl, { geometry, program });
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mouseInteractive) return;
+      const rect = containerRef.current!.getBoundingClientRect();
+      mousePos.current.x = e.clientX - rect.left;
+      mousePos.current.y = e.clientY - rect.top;
+      const mouseUniform = program.uniforms.uMouse.value as Float32Array;
+      mouseUniform[0] = mousePos.current.x;
+      mouseUniform[1] = mousePos.current.y;
+    };
+
+    if (mouseInteractive) {
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
+    }
+
+    const setSize = () => {
+      const rect = containerRef.current!.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      renderer.setSize(width, height);
+      const res = program.uniforms.iResolution.value as Float32Array;
+      res[0] = gl.drawingBufferWidth;
+      res[1] = gl.drawingBufferHeight;
+    };
+
+    const ro = new ResizeObserver(setSize);
+    ro.observe(containerRef.current);
+    setSize();
+
+    let raf = 0;
+    const t0 = performance.now();
+    const loop = (t: number) => {
+      let timeValue = (t - t0) * 0.001;
+      if (direction === 'pingpong') {
+        const pingpongDuration = 10;
+        const segmentTime = timeValue % pingpongDuration;
+        const isForward = Math.floor(timeValue / pingpongDuration) % 2 === 0;
+        const u = segmentTime / pingpongDuration;
+        const smooth = u * u * (3 - 2 * u);
+        const pingpongTime = isForward ? smooth * pingpongDuration : (1 - smooth) * pingpongDuration;
+        (program.uniforms.uDirection as any).value = 1.0;
+        (program.uniforms.iTime as any).value = pingpongTime;
+      } else {
+        (program.uniforms.iTime as any).value = timeValue;
+      }
+      renderer.render({ scene: mesh });
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      if (mouseInteractive && containerRef.current) {
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+      }
+      try {
+        containerRef.current?.removeChild(canvas);
+      } catch {}
+    };
+  }, [color, speed, direction, scale, opacity, mouseInteractive]);
+
+  return <div ref={containerRef} className="w-full h-full relative overflow-hidden" />;
+};
 
 
 type Props = {
@@ -288,8 +496,20 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-[#309898]/20 via-white to-[#FF8000]/20 flex items-center justify-center p-4 overflow-y-auto z-50">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-6 my-8 border-4 border-[#309898] relative max-h-[85vh] overflow-y-auto">
+    <>
+      <style dangerouslySetInnerHTML={{__html: `select option { color: black; }`}} />
+      <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto z-50 relative">
+        <div className="fixed inset-0 z-0">
+          <Plasma
+            color="#14b8a6"
+            speed={0.6}
+            direction="forward"
+            scale={1.1}
+            opacity={0.8}
+            mouseInteractive={true}
+          />
+        </div>
+        <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-6 my-8 border-4 border-[#14b8a6] relative max-h-[85vh] overflow-y-auto z-10">
         {/* Close Button */}
         {onClose && (
           <button
@@ -317,37 +537,38 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
           {/* Section 1: Basic Personal Information */}
           {currentSection === 1 && (
             <div className="space-y-4">
-              <h3 className="text-[#FF8000] mb-4">Basic Personal Information</h3>
+              <h3 className="text-[#14b8a6] mb-4">Basic Personal Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-[#309898] mb-2">Full Name *</label>
+                  <label className="block text-[#14b8a6] mb-2">Full Name *</label>
                   <input
                     type="text"
+                    placeholder='eg: Jane Doe'
                     value={personalInfo.fullName}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black placeholder:text-gray-500"
                   />
                   {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Date of Birth *</label>
+                  <label className="block text-[#14b8a6] mb-2">Date of Birth *</label>
                   <input
                     type="date"
                     value={personalInfo.dateOfBirth}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, dateOfBirth: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black"
                   />
                   {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Gender *</label>
+                  <label className="block text-[#14b8a6] mb-2">Gender *</label>
                   <select
                     value={personalInfo.gender}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, gender: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black"
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
@@ -358,11 +579,11 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Blood Group *</label>
+                  <label className="block text-[#14b8a6] mb-2">Blood Group *</label>
                   <select
                     value={personalInfo.bloodGroup}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, bloodGroup: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black"
                   >
                     <option value="">Select Blood Group</option>
                     <option value="A+">A+</option>
@@ -381,42 +602,42 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <label className="block text-[#309898] mb-2">Height (cm)</label>
                   <input
                     type="text"
-                    placeholder="e.g., 170"
+                    placeholder="eg: 170"
                     value={personalInfo.height}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, height: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Weight (kg)</label>
+                  <label className="block text-[#14b8a6] mb-2">Weight (kg)</label>
                   <input
                     type="text"
-                    placeholder="e.g., 70"
+                    placeholder="eg: 70"
                     value={personalInfo.weight}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, weight: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black placeholder:text-gray-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">BMI</label>
+                  <label className="block text-[#14b8a6] mb-2">BMI</label>
                   <input
                     type="text"
                     value={calculateBMI(personalInfo.height, personalInfo.weight)}
                     readOnly
-                    placeholder="Auto-calculated"
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 bg-gray-50 cursor-not-allowed"
+                    placeholder="eg: 22.5"
+                    className="text-black placeholder:text-gray-500 w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 bg-gray-50 cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Contact Number *</label>
+                  <label className="block text-[#14b8a6] mb-2">Contact Number *</label>
                   <input
                     type="tel"
                     value={personalInfo.contactNumber}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, contactNumber: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black placeholder:text-gray-500"
                   />
                   {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
                 </div>
@@ -424,12 +645,12 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
 
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-[#309898]">Emergency Contacts</label>
+                  <label className="block text-[#14b8a6]">Emergency Contacts</label>
                   <button
                     type="button"
                     onClick={addEmergencyContact}
                     disabled={personalInfo.emergencyContacts.length >= 5}
-                    className="text-[#FF8000] hover:text-[#309898] disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="text-[#134E4A] hover:text-[#14b8a6] disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -439,36 +660,36 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                     <div className="grid grid-cols-3 gap-2 mb-1">
                       <input
                         type="text"
-                        placeholder="Name"
+                        placeholder="eg: John Doe"
                         value={contact.name}
                         onChange={(e) => {
                           const newContacts = [...personalInfo.emergencyContacts];
                           newContacts[index].name = e.target.value;
                           setPersonalInfo({ ...personalInfo, emergencyContacts: newContacts });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#14b8a6]/30 focus:border-[#134E4A] focus:outline-none text-black placeholder:text-gray-500"
                       />
                       <input
                         type="tel"
-                        placeholder="Phone"
+                        placeholder="eg: 9876543210"
                         value={contact.phone}
                         onChange={(e) => {
                           const newContacts = [...personalInfo.emergencyContacts];
                           newContacts[index].phone = e.target.value;
                           setPersonalInfo({ ...personalInfo, emergencyContacts: newContacts });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                       />
                       <input
                         type="text"
-                        placeholder="Relation"
+                        placeholder="eg: Father"
                         value={contact.relation}
                         onChange={(e) => {
                           const newContacts = [...personalInfo.emergencyContacts];
                           newContacts[index].relation = e.target.value;
                           setPersonalInfo({ ...personalInfo, emergencyContacts: newContacts });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -529,14 +750,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter condition"
+                      placeholder="eg: Diabetes"
                       value={condition}
                       onChange={(e) => {
                         const newConditions = [...currentMedical.conditions];
                         newConditions[index] = e.target.value;
                         setCurrentMedical({ ...currentMedical, conditions: newConditions });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {currentMedical.conditions.length > 1 && (
                       <button
@@ -568,58 +789,58 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 mb-2">
         <input
           type="text"
-          placeholder="Name"
+          placeholder="eg: Aspirin"
           value={med.name}
           onChange={(e) => {
             const newMeds = [...currentMedical.medications];
             newMeds[index].name = e.target.value;
             setCurrentMedical({ ...currentMedical, medications: newMeds });
           }}
-          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
         />
         <input
           type="text"
-          placeholder="Dosage"
+          placeholder="eg: 500mg"
           value={med.dosage}
           onChange={(e) => {
             const newMeds = [...currentMedical.medications];
             newMeds[index].dosage = e.target.value;
             setCurrentMedical({ ...currentMedical, medications: newMeds });
           }}
-          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
         />
         <input
           type="text"
-          placeholder="Frequency"
+          placeholder="eg: Twice daily"
           value={med.frequency}
           onChange={(e) => {
             const newMeds = [...currentMedical.medications];
             newMeds[index].frequency = e.target.value;
             setCurrentMedical({ ...currentMedical, medications: newMeds });
           }}
-          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
         />
         <input
           type="text"
-          placeholder="Course"
+          placeholder="eg: 7 days"
           value={med.course}
           onChange={(e) => {
             const newMeds = [...currentMedical.medications];
             newMeds[index].course = e.target.value;
             setCurrentMedical({ ...currentMedical, medications: newMeds });
           }}
-          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
         />
         <input
           type="text"
-          placeholder="Purpose"
+          placeholder="eg: Pain relief"
           value={med.purpose}
           onChange={(e) => {
             const newMeds = [...currentMedical.medications];
             newMeds[index].purpose = e.target.value;
             setCurrentMedical({ ...currentMedical, medications: newMeds });
           }}
-          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
         />
       </div>
       {currentMedical.medications.length > 1 && (
@@ -653,14 +874,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter allergy"
+                      placeholder="eg: Peanuts"
                       value={allergy}
                       onChange={(e) => {
                         const newAllergies = [...currentMedical.allergies];
                         newAllergies[index] = e.target.value;
                         setCurrentMedical({ ...currentMedical, allergies: newAllergies });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {currentMedical.allergies.length > 1 && (
                       <button
@@ -690,14 +911,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter treatment"
+                      placeholder="eg: Physiotherapy"
                       value={treatment}
                       onChange={(e) => {
                         const newTreatments = [...currentMedical.treatments];
                         newTreatments[index] = e.target.value;
                         setCurrentMedical({ ...currentMedical, treatments: newTreatments });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {currentMedical.treatments.length > 1 && (
                       <button
@@ -728,36 +949,36 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                     <div className="grid grid-cols-3 gap-2 mb-1">
                       <input
                         type="text"
-                        placeholder="Name"
+                        placeholder="eg: Dr. Smith"
                         value={doctor.name}
                         onChange={(e) => {
                           const newDoctors = [...currentMedical.doctors];
                           newDoctors[index].name = e.target.value;
                           setCurrentMedical({ ...currentMedical, doctors: newDoctors });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                       />
                       <input
                         type="tel"
-                        placeholder="Phone"
+                        placeholder="eg: 9876543210"
                         value={doctor.phone}
                         onChange={(e) => {
                           const newDoctors = [...currentMedical.doctors];
                           newDoctors[index].phone = e.target.value;
                           setCurrentMedical({ ...currentMedical, doctors: newDoctors });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                       />
                       <input
                         type="text"
-                        placeholder="Speciality"
+                        placeholder="eg: Cardiologist"
                         value={doctor.speciality}
                         onChange={(e) => {
                           const newDoctors = [...currentMedical.doctors];
                           newDoctors[index].speciality = e.target.value;
                           setCurrentMedical({ ...currentMedical, doctors: newDoctors });
                         }}
-                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                        className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
                       />
                     </div>
                     <div className="flex items-center justify-between gap-2">
@@ -815,14 +1036,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter disease"
+                      placeholder="eg: Hypertension"
                       value={disease}
                       onChange={(e) => {
                         const newDiseases = [...pastMedical.diseases];
                         newDiseases[index] = e.target.value;
                         setPastMedical({ ...pastMedical, diseases: newDiseases });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {pastMedical.diseases.length > 1 && (
                       <button
@@ -852,14 +1073,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Surgery name"
+                      placeholder="eg: Appendectomy"
                       value={surgery.name}
                       onChange={(e) => {
                         const newSurgeries = [...pastMedical.surgeries];
                         newSurgeries[index].name = e.target.value;
                         setPastMedical({ ...pastMedical, surgeries: newSurgeries });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
                     />
                     <input
                       type="date"
@@ -869,7 +1090,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newSurgeries[index].date = e.target.value;
                         setPastMedical({ ...pastMedical, surgeries: newSurgeries });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                     />
                     {pastMedical.surgeries.length > 1 && (
                       <button
@@ -899,14 +1120,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Reason"
+                      placeholder="eg: Heart Surgery"
                       value={hosp.reason}
                       onChange={(e) => {
                         const newHosps = [...pastMedical.hospitalizations];
                         newHosps[index].reason = e.target.value;
                         setPastMedical({ ...pastMedical, hospitalizations: newHosps });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
                     />
                     <input
                       type="date"
@@ -916,7 +1137,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newHosps[index].date = e.target.value;
                         setPastMedical({ ...pastMedical, hospitalizations: newHosps });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
                     />
                     {pastMedical.hospitalizations.length > 1 && (
                       <button
@@ -946,14 +1167,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter injury"
+                      placeholder="eg: Broken Leg"
                       value={injury}
                       onChange={(e) => {
                         const newInjuries = [...pastMedical.injuries];
                         newInjuries[index] = e.target.value;
                         setPastMedical({ ...pastMedical, injuries: newInjuries });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {pastMedical.injuries.length > 1 && (
                       <button
@@ -983,14 +1204,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter illness"
+                      placeholder="eg: Chickenpox"
                       value={illness}
                       onChange={(e) => {
                         const newIllnesses = [...pastMedical.childhoodIllnesses];
                         newIllnesses[index] = e.target.value;
                         setPastMedical({ ...pastMedical, childhoodIllnesses: newIllnesses });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {pastMedical.childhoodIllnesses.length > 1 && (
                       <button
@@ -1020,14 +1241,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter medication"
+                      placeholder="eg: Aspirin"
                       value={med}
                       onChange={(e) => {
                         const newMeds = [...pastMedical.pastMedications];
                         newMeds[index] = e.target.value;
                         setPastMedical({ ...pastMedical, pastMedications: newMeds });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {pastMedical.pastMedications.length > 1 && (
                       <button
@@ -1057,14 +1278,14 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Enter treatment"
+                      placeholder="eg: Chemotherapy"
                       value={treatment}
                       onChange={(e) => {
                         const newTreatments = [...pastMedical.longTermTreatments];
                         newTreatments[index] = e.target.value;
                         setPastMedical({ ...pastMedical, longTermTreatments: newTreatments });
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black"
                     />
                     {pastMedical.longTermTreatments.length > 1 && (
                       <button
@@ -1101,25 +1322,25 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Disease"
+                      placeholder="eg: Cancer"
                       value={item.disease}
                       onChange={(e) => {
                         const newHistory = [...familyHistory];
                         newHistory[index].disease = e.target.value;
                         setFamilyHistory(newHistory);
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none placeholder:text-gray-500"
                     />
                     <input
                       type="text"
-                      placeholder="Relation (e.g., Father, Mother)"
+                      placeholder="eg: Mother"
                       value={item.relation}
                       onChange={(e) => {
                         const newHistory = [...familyHistory];
                         newHistory[index].relation = e.target.value;
                         setFamilyHistory(newHistory);
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none text-black placeholder:text-gray-500"
                     />
                     {familyHistory.length > 1 && (
                       <button
@@ -1160,5 +1381,6 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
         </div>
       </div>
     </div>
+    </>
   );
 }
