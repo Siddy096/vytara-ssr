@@ -5,16 +5,27 @@ import React, {
   useRef,
   useMemo,
   useLayoutEffect,
-  useEffect
+  useEffect,
+  type ReactNode
 } from 'react';
+
 
 import { Menu, X, Lock, AlertCircle, Users, Brain } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
+interface ChildrenProps {
+  children: ReactNode;
+}
+
+interface FeatureStackCardProps {
+  children: ReactNode;
+  color: string;
+  top?: string;
+}
 
 /* ========================= ScrollFloat ========================= */
-const ScrollFloat = ({ children }) => {
+const ScrollFloat: React.FC<ChildrenProps> = ({ children }) => {
   const ref = useRef(null);
 
   const chars = useMemo(() => {
@@ -72,7 +83,7 @@ const ScrollFloat = ({ children }) => {
 };
 
 /* ========================= ScrollReveal With Title Pin + Color Sync ========================= */
-const ScrollReveal = ({ children }) => {
+const ScrollReveal: React.FC<ChildrenProps> = ({ children }) => {
   const ref = useRef(null);
 
   const words = useMemo(
@@ -172,7 +183,11 @@ const ScrollReveal = ({ children }) => {
 };
 
 /* ========================= SIMPLE STICKY FEATURE CARD ========================= */
-const FeatureStackCard = ({ children, color, top = 'top-[15vh]' }) => (
+const FeatureStackCard: React.FC<FeatureStackCardProps> = ({
+  children,
+  color,
+  top = 'top-[15vh]'
+}) => (
   <div
     className={`feature-stack-card w-full h-80 md:h-80 rounded-[32px] shadow-xl flex items-center justify-between px-10 sticky ${top} md:flex-row flex-col`}
     style={{ backgroundColor: color }}
