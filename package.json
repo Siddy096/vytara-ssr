@@ -12,8 +12,10 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.3",
     "framer-motion": "^12.23.26",
+    "gsap": "^3.14.2",
     "lucide-react": "^0.562.0",
     "next": "16.0.10",
+    "ogl": "^1.0.11",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
