@@ -5,10 +5,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // <--- CHANGED: Used for redirection
 import { MedicalInfoForm } from '@/components/MedicalInfoForm'; // <--- CHANGED: Point to correct components folder
 import { MedicalInfo, UserData } from '@/lib/types';
-
-/* ========================= PLASMA BACKGROUND ========================= */
 import { Renderer, Program, Mesh, Triangle } from 'ogl';
 
+/* ========================= PLASMA BACKGROUND ========================= */
 interface PlasmaProps {
   color?: string;
   speed?: number;
@@ -284,8 +283,9 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
     setSignupData({ username: '', email: '', password: '', confirmPassword: '' });
   };
 
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
+    <div className="bg-white relative">
       <div className="fixed inset-0 z-0">
         <Plasma
           color="#14b8a6"
@@ -297,175 +297,175 @@ export default function LoginPage() { // <--- CHANGED: Removed props (Pages don'
         />
       </div>
       <div className="relative z-10">
+        {showModal && (
+          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#14b8a6] to-[#134E4A]"></div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#14b8a6] to-[#134E4A]"></div>
-            
-            <div className="p-8">
-              <div className="flex justify-center mb-6">
-                <img
-                  src={logoImage}
-                  alt="Vytara Logo"
-                  className="h-24 w-24 object-contain"
-                />
-              </div>  
+              <div className="p-8">
+                <div className="flex justify-center mb-6">
+                  <img
+                    src={logoImage}
+                    alt="Vytara Logo"
+                    className="h-24 w-24 object-contain"
+                  />
+                </div>
 
-              <h1 className="text-center text-[#14b8a6] mb-2">Vytara</h1>
-              <p className="text-center text-gray-600 mb-6">Your Health Records, Simplified</p>
+                <h1 className="text-center text-[#14b8a6] mb-2">Vytara</h1>
+                <p className="text-center text-gray-600 mb-6">Your Health Records, Simplified</p>
 
-              {modalType === 'login' && (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-700 mb-2">Username</label>
-                    <input
-                      type="text"
-                      value={loginData.username}
-                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#14b8a6] focus:outline-none transition-colors text-black"
-                      placeholder="Enter your username"
-                    />
-                    {errors.username && <p className="text-red-500 mt-1">{errors.username}</p>}
-                  </div>
+                {modalType === 'login' && (
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-gray-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        value={loginData.username}
+                        onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#14b8a6] focus:outline-none transition-colors text-black"
+                        placeholder="Enter your username"
+                      />
+                      {errors.username && <p className="text-red-500 mt-1">{errors.username}</p>}
+                    </div>
 
-                  <div>
-                    <label className="block text-gray-700 mb-2">Password</label>
-                    <input
-                      type="password"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#14b8a6] focus:outline-none transition-colors text-black"
-                      placeholder="Enter your password"
-                    />
-                    {errors.password && <p className="text-red-500 mt-1">{errors.password}</p>}
-                  </div>
+                    <div>
+                      <label className="block text-gray-700 mb-2">Password</label>
+                      <input
+                        type="password"
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#14b8a6] focus:outline-none transition-colors text-black"
+                        placeholder="Enter your password"
+                      />
+                      {errors.password && <p className="text-red-500 mt-1">{errors.password}</p>}
+                    </div>
 
-                  {errors.login && <p className="text-red-500 text-center">{errors.login}</p>}
+                    {errors.login && <p className="text-red-500 text-center">{errors.login}</p>}
 
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-[#14b8a6] to-[#134E4A] text-white py-3 rounded-xl hover:shadow-lg transition-all"
-                  >
-                    Login
-                  </button>
-
-                  <div className="flex justify-between mt-4">
-                    <button type="button" className="text-[#134E4A] hover:underline">
-                      Forgot Password?
-                    </button>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setModalType('signup');
-                        setErrors({});
-                      }}
-                      className="text-[#14b8a6] hover:underline"
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-[#14b8a6] to-[#134E4A] text-white py-3 rounded-xl hover:shadow-lg transition-all"
+                    >
+                      Login
+                    </button>
+
+                    <div className="flex justify-between mt-4">
+                      <button type="button" className="text-[#134E4A] hover:underline">
+                        Forgot Password?
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalType('signup');
+                          setErrors({});
+                        }}
+                        className="text-[#14b8a6] hover:underline"
+                      >
+                        Sign Up
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {modalType === 'signup' && (
+                  <form onSubmit={handleSignup} className="space-y-4">
+
+                    <div>
+                      <label className="block text-gray-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        value={signupData.username}
+                        onChange={(e) =>
+                          setSignupData({ ...signupData, username: e.target.value })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
+                      />
+                      {errors.username && (
+                        <p className="text-red-500 mt-1">{errors.username}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={signupData.email}
+                        onChange={(e) =>
+                          setSignupData({ ...signupData, email: e.target.value })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 mt-1">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2">Password</label>
+                      <input
+                        type="password"
+                        value={signupData.password}
+                        onChange={(e) =>
+                          setSignupData({ ...signupData, password: e.target.value })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
+                      />
+                      {errors.password && (
+                        <p className="text-red-500 mt-1">{errors.password}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2">Confirm Password</label>
+                      <input
+                        type="password"
+                        value={signupData.confirmPassword}
+                        onChange={(e) =>
+                          setSignupData({ ...signupData, confirmPassword: e.target.value })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
+                      />
+                      {errors.confirmPassword && (
+                        <p className="text-red-500 mt-1">{errors.confirmPassword}</p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-[#14b8a6] to-[#134E4A] text-white py-3 rounded-xl"
                     >
                       Sign Up
                     </button>
-                  </div>
-                </form>
-              )}
 
-              {modalType === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
+                    <div className="text-center mt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalType('login');
+                          setErrors({});
+                        }}
+                        className="text-[#309898] hover:underline"
+                      >
+                        Back to Login
+                      </button>
+                    </div>
 
-                  <div>
-                    <label className="block text-gray-700 mb-2">Username</label>
-                    <input
-                      type="text"
-                      value={signupData.username}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, username: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
-                    />
-                    {errors.username && (
-                      <p className="text-red-500 mt-1">{errors.username}</p>
-                    )}
-                  </div>
+                  </form>
+                )}
 
-                  <div>
-                    <label className="block text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      value={signupData.email}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, email: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 mt-1">{errors.email}</p>
-                    )}
-                  </div>
 
-                  <div>
-                    <label className="block text-gray-700 mb-2">Password</label>
-                    <input
-                      type="password"
-                      value={signupData.password}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, password: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
-                    />
-                    {errors.password && (
-                      <p className="text-red-500 mt-1">{errors.password}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 mb-2">Confirm Password</label>
-                    <input
-                      type="password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, confirmPassword: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black"
-                    />
-                    {errors.confirmPassword && (
-                      <p className="text-red-500 mt-1">{errors.confirmPassword}</p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-[#14b8a6] to-[#134E4A] text-white py-3 rounded-xl"
-                  >
-                    Sign Up
-                  </button>
-
-                  <div className="text-center mt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalType('login');
-                        setErrors({});
-                      }}
-                      className="text-[#309898] hover:underline"
-                    >
-                      Back to Login
-                    </button>
-                  </div>
-
-                </form>
-              )}
-              
-
-              {modalType === 'medical' && (
-                <MedicalInfoForm
-                  onComplete={handleMedicalInfoSubmit}
-                  onClose={() => setModalType('signup')}
-                />
-              )}
+                {modalType === 'medical' && (
+                  <MedicalInfoForm
+                    onComplete={handleMedicalInfoSubmit}
+                    onClose={() => setModalType('signup')}
+                  />
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
 }
+
