@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, {
   useState,
@@ -179,9 +179,8 @@ const ScrollFloat = ({ children }) => {
 };
 
 /* ========================= ScrollReveal With Title Pin + Color Sync ========================= */
-
-const ScrollReveal = ({ children }) => {
-  const ref = useRef(null);
+const ScrollReveal: React.FC<TextChildrenProps & { menuOpen?: boolean }> = ({ children, menuOpen = false }) => {
+  const ref = useRef<HTMLHeadingElement | null>(null);
 
   const words = useMemo(
     () =>
@@ -194,10 +193,11 @@ const ScrollReveal = ({ children }) => {
   );
 
   useLayoutEffect(() => {
-    if (!ref.current) return;
+    const el = ref.current;
+    if (!el) return;
 
     const ctx = gsap.context(() => {
-      const wordsEl = ref.current.querySelectorAll('.word');
+      const wordsEl = el.querySelectorAll('.word');
 
       // reveal animation
       gsap.fromTo(
@@ -225,8 +225,8 @@ const ScrollReveal = ({ children }) => {
         pinSpacing: false
       });
 
-      // CARD COLOR SYNC on desktop only
-      if (window.innerWidth >= 768) {
+      // CARD COLOR SYNC: desktop (>= 768px) OR mobile when menu is open
+      if (window.innerWidth >= 768 || menuOpen) {
         const cards = document.querySelectorAll('.feature-card');
 
         ScrollTrigger.create({
@@ -270,6 +270,9 @@ const ScrollReveal = ({ children }) => {
             }
           }
         });
+      } else {
+        // Ensure title remains black on mobile/tablet (< 768px) when menu is closed
+        gsap.set(ref.current, { color: '#000000' });
       }
 
     });
@@ -281,16 +284,21 @@ const ScrollReveal = ({ children }) => {
   return (
     <h2
       ref={ref}
-      className="text-[clamp(1.8rem,4vw,3rem)] font-serif text-black text-center leading-tight z-50 whitespace-nowrap"
+      className={`text-[clamp(1.8rem,4vw,3rem)] font-serif text-black text-center leading-tight whitespace-nowrap z-50 ${
+        menuOpen && window.innerWidth < 768 ? 'hidden' : 'block'
+      }`}
     >
       {words}
     </h2>
   );
 };
 
-
 /* ========================= SIMPLE STICKY FEATURE CARD ========================= */
-const FeatureStackCard = ({ children, color, top = 'top-[15vh]' }) => (
+const FeatureStackCard: React.FC<FeatureStackCardProps> = ({
+  children,
+  color,
+  top = 'top-[15vh]'
+}) => (
   <div
     className={`feature-stack-card w-full h-80 md:h-80 rounded-[32px] shadow-xl flex items-center justify-between px-10 sticky ${top} md:flex-row flex-col`}
     style={{ backgroundColor: color }}
@@ -298,6 +306,7 @@ const FeatureStackCard = ({ children, color, top = 'top-[15vh]' }) => (
     {children}
   </div>
 );
+
 
 /* ========================= MAIN PAGE ========================= */
 export default function Landing() {
@@ -409,7 +418,7 @@ export default function Landing() {
               </button>
 
               <button onClick={() => setMenu(!menu)} className="md:hidden">
-                {menu ? <X /> : <Menu />}
+                {menu ? <X className="text-[#134e4a]" /> : <Menu className="text-[#134e4a]" />}
               </button>
             </div>
 
@@ -417,7 +426,7 @@ export default function Landing() {
 
           {/* MOBILE DROPDOWN */}
           {menu && (
-            <div className="bg-white shadow-md md:hidden">
+            <div className="bg-white shadow-md md:hidden z-[60]">
               {[
                 ['Get Started', 'login'],
                 ['Watch Demo', 'demo'],
@@ -585,8 +594,8 @@ export default function Landing() {
         </section>
 
         {/* ===== FEATURES ===== */}
-        <section id="features" className="px-4 py-8 max-w-6xl mx-auto">
-          <ScrollReveal>So what do we do exactly?</ScrollReveal>
+        <section id="features" className="px-4 py-8 max-w-5xl mx-auto">
+          <ScrollReveal menuOpen={menu}>So what do we do exactly?</ScrollReveal>
 
           <div className="mt-[18vh]">
 
@@ -618,7 +627,7 @@ export default function Landing() {
               </div>
             </FeatureStackCard>
 
-            <FeatureStackCard color="#14b8a6" top="md:top-[15vh] top-[25vh]">
+            <FeatureStackCard color="#14b8a6" top="md:top-[15vh] top-[20vh]">
               <div className="feature-card flex w-full justify-between items-center gap-8 md:flex-row flex-col">
                 <div className="flex-1 text-left md:order-1 order-2">
                   <p className="text-2xl font-bold text-white mb-3">
@@ -659,8 +668,8 @@ export default function Landing() {
                 <h3 className="font-semibold text-lg mb-4">Contact Us</h3>
                 <div className="space-y-2 text-gray-400 text-sm">
                   <p>Email: hello@vytara.com</p>
-                  <p>Phone: +1 (555) 123-4567</p>
-                  <p>Address: 123 Health St, Medical City, MC 12345</p>
+                  <p>Phone: 07738322228</p>
+                  <p>Address: 327, 3rd Floor, Ajmera Sikova, ICRC, Ghatkopar West, Mumbai 400086</p>
                 </div>
               </div>
 
@@ -691,8 +700,8 @@ export default function Landing() {
                   <h3 className="font-semibold text-xs mb-1">Contact Us</h3>
                   <div className="space-y-0.5 text-gray-400 text-xs">
                     <p>Email: hello@vytara.com</p>
-                    <p>Phone: +1 (555) 123-4567</p>
-                    <p>Address: 123 Health St, Medical City, MC 12345</p>
+                    <p>Phone: 07738322228</p>
+                    <p>Address: 327, 3rd Floor, Ajmera Sikova, ICRC, Ghatkopar West, Mumbai 400086</p>
                   </div>
                 </div>
 
