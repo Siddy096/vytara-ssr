@@ -307,13 +307,13 @@ export default function SignUpPage() {
       setLoading(false);
     }
   }
-
+  
   const signInWithGoogle = async(e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
       const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://vytara-official.vercel.app/medicalinfoform-1",
+        redirectTo: "http://vytara-official.vercel.app/medicalinfoform-1",
           
       },
     });
@@ -390,6 +390,19 @@ export default function SignUpPage() {
                 disabled={loading}  
               >
                 {loading ? "Creating Account..." : "Create Account"}
+              </button>
+              <button
+                onClick={signInWithGoogle}
+                className="flex items-center justify-center gap-3 w-full border border-gray-300 rounded-xl py-3 bg-white hover:bg-gray-50 transition-all shadow-sm cursor-pointer"
+              >
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google"
+                  className="w-5 h-5"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Sign in with Google
+                </span>
               </button>
             </form>
 
