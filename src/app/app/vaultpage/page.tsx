@@ -198,10 +198,7 @@ import {
 } from 'lucide-react';
 
 import { supabase } from '@/lib/createClient';
-import {
-  listMedicalFiles,
-  uploadMedicalFile,
-} from '@/lib/medicalStorage';
+import { listMedicalFiles, uploadMedicalFile } from '@/lib/medicalStorage';
 import { MedicalFolder } from '@/constants/medicalFolders';
 
 type Category = 'lab-reports' | 'prescriptions' | 'insurance' | 'bills' | 'all';
@@ -217,14 +214,15 @@ export default function VaultPage() {
   const [files, setFiles] = useState<MedicalFile[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [selectedOwner, setSelectedOwner] = useState('self');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  const [uploadData, setUploadData] = useState({
-    name: '',
-    category: 'lab-reports' as Category,
-    file: null as File | null,
+  const [uploadData, setUploadData] = useState<{
+    category: Category;
+    file: File | null;
+  }>({
+    category: 'lab-reports',
+    file: null,
   });
 
   /* ---------------- AUTH + FETCH ---------------- */
@@ -232,13 +230,16 @@ export default function VaultPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-
       setUserId(data.user.id);
-      fetchFiles(data.user.id);
+      fetchFiles(data.user.id, selectedCategory);
     });
   }, []);
 
-  const fetchFiles = async (uid: string) => {
+  useEffect(() => {
+    if (userId) fetchFiles(userId, selectedCategory);
+  }, [selectedCategory]);
+
+  const fetchFiles = async (uid: string, category: Category) => {
     setLoading(true);
 
     const folderMap: Record<Category, MedicalFolder[]> = {
@@ -249,11 +250,9 @@ export default function VaultPage() {
       bills: ['bills'],
     };
 
-    const folders = folderMap[selectedCategory];
-
     const results: MedicalFile[] = [];
 
-    for (const folder of folders) {
+    for (const folder of folderMap[category]) {
       const { data } = await listMedicalFiles(uid, folder);
       if (data) {
         results.push(
@@ -277,10 +276,6 @@ export default function VaultPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (userId) fetchFiles(userId);
-  }, [selectedCategory]);
-
   /* ---------------- UPLOAD ---------------- */
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -302,8 +297,8 @@ export default function VaultPage() {
     );
 
     setShowUploadModal(false);
-    setUploadData({ name: '', category: 'lab-reports', file: null });
-    fetchFiles(userId);
+    setUploadData({ category: 'lab-reports', file: null });
+    fetchFiles(userId, selectedCategory);
   };
 
   /* ---------------- UI ---------------- */
@@ -316,18 +311,18 @@ export default function VaultPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between">
-          <h1 className="text-xl font-semibold text-gray-800">
-            Vytara - Vault
+    <div className="min-h-screen bg-[#f4f7f8]">
+      {/* HEADER */}
+      <header className="bg-gradient-to-r from-teal-700 to-teal-500 shadow-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-xl font-semibold text-white">
+            Vytara – Vault
           </h1>
           <div className="flex gap-3">
-            <button className="px-5 py-2 bg-teal-100 rounded-full flex gap-2">
+            <button className="flex items-center gap-2 px-5 py-2 bg-white/20 text-white rounded-full backdrop-blur">
               <Home className="w-4 h-4" /> Home
             </button>
-            <button className="px-5 py-2 bg-teal-600 text-white rounded-full flex gap-2">
+            <button className="flex items-center gap-2 px-5 py-2 bg-white text-teal-700 rounded-full font-medium">
               <User className="w-4 h-4" /> Profile
             </button>
           </div>
@@ -337,50 +332,36 @@ export default function VaultPage() {
       <main className="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-3 gap-8">
         {/* LEFT */}
         <div className="lg:col-span-2 space-y-6">
-          <div>
-            <label className="font-medium mb-2 block">
-              Family Member
-            </label>
-            <div className="relative">
-              <select
-                value={selectedOwner}
-                onChange={e => setSelectedOwner(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border"
-              >
-                <option value="self">👤 Self</option>
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            </div>
-          </div>
-
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-6 py-3 bg-teal-600 text-white rounded-xl"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-xl shadow hover:bg-teal-700"
           >
             + Upload New Document
           </button>
 
           <div>
-            <h2 className="text-2xl font-semibold mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
               My Documents
             </h2>
 
             {files.length === 0 && !loading ? (
-              <div className="bg-white p-16 rounded-xl text-center">
-                <Upload className="w-16 h-16 mx-auto text-teal-500" />
-                <p className="mt-4">Upload your first document</p>
+              <div className="bg-white border-2 border-dashed border-teal-300 rounded-2xl p-16 text-center">
+                <Upload className="w-16 h-16 mx-auto text-teal-600" />
+                <p className="mt-4 text-gray-600">
+                  Upload your first document
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {files.map(file => (
                   <div
                     key={file.name}
-                    className="bg-white p-4 rounded-xl border"
+                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition"
                   >
-                    <div className="h-32 flex items-center justify-center bg-teal-50 rounded mb-3">
-                      <FileText className="w-10 h-10 text-teal-600" />
+                    <div className="h-32 flex items-center justify-center bg-teal-100 rounded-lg mb-3">
+                      <FileText className="w-10 h-10 text-teal-700" />
                     </div>
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-sm font-medium text-gray-800 truncate">
                       {file.name}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -395,13 +376,20 @@ export default function VaultPage() {
 
         {/* RIGHT */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Filter by Type</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Filter by Type
+          </h2>
 
           <button
             onClick={() => setSelectedCategory('all')}
-            className="w-full p-5 border rounded-xl flex justify-between"
+            className={`w-full p-5 rounded-2xl border-2 text-left ${
+              selectedCategory === 'all'
+                ? 'border-teal-600 bg-teal-50'
+                : 'border-gray-200 bg-white'
+            }`}
           >
-            <Folder /> All Documents
+            <Folder className="inline mr-2 text-teal-600" />
+            All Documents
           </button>
 
           {categories.map(cat => (
@@ -410,9 +398,14 @@ export default function VaultPage() {
               onClick={() =>
                 setSelectedCategory(cat.id as Category)
               }
-              className="w-full p-5 border rounded-xl flex justify-between"
+              className={`w-full p-5 rounded-2xl border-2 text-left ${
+                selectedCategory === cat.id
+                  ? 'border-teal-600 bg-teal-50'
+                  : 'border-gray-200 bg-white'
+              }`}
             >
-              <cat.icon /> {cat.label}
+              <cat.icon className="inline mr-2 text-teal-600" />
+              {cat.label}
             </button>
           ))}
         </div>
@@ -420,11 +413,15 @@ export default function VaultPage() {
 
       {/* UPLOAD MODAL */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <form
             onSubmit={handleUpload}
-            className="bg-white p-6 rounded-xl w-full max-w-md"
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
           >
+            <h3 className="text-lg font-semibold mb-4">
+              Upload Document
+            </h3>
+
             <input
               type="file"
               required
@@ -434,8 +431,10 @@ export default function VaultPage() {
                   file: e.target.files?.[0] || null,
                 })
               }
+              className="mb-4"
             />
-            <button className="mt-4 w-full bg-teal-600 text-white py-2 rounded">
+
+            <button className="w-full py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700">
               Upload
             </button>
           </form>
