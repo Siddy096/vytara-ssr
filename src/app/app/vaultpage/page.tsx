@@ -418,7 +418,7 @@ export default function VaultPage() {
             onSubmit={handleUpload}
             className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
           >
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">
               Upload Document
             </h3>
 
@@ -431,7 +431,7 @@ export default function VaultPage() {
                   file: e.target.files?.[0] || null,
                 })
               }
-              className="mb-4"
+              className="mb-4 text-gray-800"
             />
 
             <button className="w-full py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700">
