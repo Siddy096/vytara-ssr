@@ -382,7 +382,7 @@ export default function VaultPage() {
 
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`w-full p-5 rounded-2xl border-2 text-left ${
+            className={`w-full p-5 rounded-2xl border-2 text-gray-800 text-left ${
               selectedCategory === 'all'
                 ? 'border-teal-600 bg-teal-50'
                 : 'border-gray-200 bg-white'
@@ -398,7 +398,7 @@ export default function VaultPage() {
               onClick={() =>
                 setSelectedCategory(cat.id as Category)
               }
-              className={`w-full p-5 rounded-2xl border-2 text-left ${
+              className={`w-full p-5 rounded-2xl border-2 text-gray-800 text-left ${
                 selectedCategory === cat.id
                   ? 'border-teal-600 bg-teal-50'
                   : 'border-gray-200 bg-white'
