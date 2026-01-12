@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/createClient";
 import { useRouter } from "next/navigation";
-import { AppointmentsModal } from '@/components/AppointmentsModal'
+import { AppointmentsModal } from '@/components/AppointmentsModal';
+import { MedicalSummaryModal } from '@/components/MedicalSummaryModal'; // NEW IMPORT
 import {
   Calendar,
   Users,
@@ -61,6 +62,9 @@ export default function HomePage() {
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [medicalTeam, setMedicalTeam] = useState<Doctor[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
+
+  // NEW: State for medical summary modal
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
   const handleAddAppointment = (appointment: Appointment) => {
     setAppointments(prev => {
@@ -198,6 +202,19 @@ export default function HomePage() {
             <p className="text-slate-600 text-lg max-w-md">
               Designed with empathy. Built for clarity. Ready when you need it.
             </p>
+
+            {/* UPDATED: Get Summary button now opens modal */}
+            <button
+              onClick={() => {
+                console.log('🔘 Get Summary button clicked!');
+                setIsSummaryModalOpen(true);
+                console.log('🔘 Modal state set to true');
+              }}
+              className="mt-6 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-md transition hover:scale-105"
+            >
+              Get Summary
+            </button>
+
           </div>
 
           {/* SOS */}
@@ -212,17 +229,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* MODAL */}
+        {/* EXISTING MODALS */}
         {activeSection && (
           <Modal onClose={() => setActiveSection(null)}>
             {activeSection === "calendar" && (
-            <CalendarView
-              appointments={appointments}
-              onAddAppointment={handleAddAppointment}
-              onDeleteAppointment={handleDeleteAppointment}
-              onClose={() => setActiveSection(null)}
-            />
-          )}
+              <CalendarView
+                appointments={appointments}
+                onAddAppointment={handleAddAppointment}
+                onDeleteAppointment={handleDeleteAppointment}
+                onClose={() => setActiveSection(null)}
+              />
+            )}
             {activeSection === "emergency" && (
               <EmergencyModal data={emergencyContacts} />
             )}
@@ -234,6 +251,14 @@ export default function HomePage() {
             )}
           </Modal>
         )}
+
+        {/* NEW: Medical Summary Modal */}
+        <MedicalSummaryModal
+          isOpen={isSummaryModalOpen}
+          onClose={() => setIsSummaryModalOpen(false)}
+          folderType="reports"
+          userId={userId}  // ← ADD THIS LINE
+        />
 
         {/* CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -248,7 +273,7 @@ export default function HomePage() {
 }
 
 /* =======================
-   MODAL
+   MODAL (EXISTING)
 ======================= */
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
@@ -274,7 +299,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 }
 
 /* =======================
-   MODAL CONTENTS
+   MODAL CONTENTS (EXISTING)
 ======================= */
 
 function CalendarView({
@@ -338,7 +363,7 @@ function MedicationsModal({ data }: { data: Medication[] }) {
 }
 
 /* =======================
-   SHARED UI
+   SHARED UI (EXISTING)
 ======================= */
 
 function DemoItem({ title, subtitle }: { title: string; subtitle: string }) {
