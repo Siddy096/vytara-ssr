@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/createClient";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+
 export default function MedicalInfoFormUI() {
   const router = useRouter();
   
