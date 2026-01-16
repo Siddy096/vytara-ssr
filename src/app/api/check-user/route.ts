@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -26,22 +29,11 @@ export async function POST(request: Request) {
       auth: { persistSession: false },
     });
 
-    const { data, error } =
-      await supabaseAdmin.auth.admin.getUserByEmail(
-        email.trim().toLowerCase()
-      );
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      email: email.trim().toLowerCase(),
+      perPage: 1,
+    });
 
-    // User exists
-    if (data?.user) {
-      return NextResponse.json({ exists: true });
-    }
-
-    // User does not exist (this is NOT an error)
-    if (error && error.code === "user_not_found") {
-      return NextResponse.json({ exists: false });
-    }
-
-    // Unexpected error
     if (error) {
       return NextResponse.json(
         { error: error.message },
@@ -49,7 +41,9 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ exists: false });
+    const exists = (data?.users?.length ?? 0) > 0;
+
+    return NextResponse.json({ exists });
   } catch (err) {
     console.error("check-user failed:", err);
     return NextResponse.json(
