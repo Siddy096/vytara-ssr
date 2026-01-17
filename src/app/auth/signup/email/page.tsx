@@ -43,13 +43,7 @@ export default function SignupWithEmail() {
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (lookupError) {
-      setLoading(false);
-      setErrorMsg("Unable to verify account status. Please try again.");
-      return;
-    }
-
-    if (existingProfile) {
+    if (!lookupError && existingProfile) {
       setLoading(false);
       setErrorMsg("Account already exists. Please sign in.");
       return;
