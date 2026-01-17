@@ -210,8 +210,6 @@ export default function StaticVaultPage() {
                         
                         const folder = getFolderByType(selectedType);
 
-                        const filePath = `${folder}/${Date.now()}-${selectedFile.name}`;
-
                         const {
                           data: { user },
                         } = await supabase.auth.getUser();
@@ -223,6 +221,8 @@ export default function StaticVaultPage() {
 
                         const userId = user.id;
 
+                        const filePath = `${userId}/${selectedType.toLowerCase()}/${Date.now()}-${selectedFile.name}`;
+                        
                         const { error } = await supabase.storage
                           .from("medical-vault")
                           .upload(filePath ,selectedFile, {
