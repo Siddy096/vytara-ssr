@@ -44,12 +44,8 @@ export default function LoginWithPhone() {
       .maybeSingle();
 
     if (lookupError) {
-      setLoading(false);
-      setError("Unable to verify account status. Please try again.");
-      return;
-    }
-
-    if (!existingUser) {
+      console.warn("Phone lookup failed; proceeding with OTP.", lookupError);
+    } else if (!existingUser) {
       setLoading(false);
       setError("User not found. Please create an account first.");
       return;
@@ -64,7 +60,12 @@ export default function LoginWithPhone() {
     setLoading(false);
 
     if (error) {
-      setError(error.message || "Failed to send OTP. Please check the number and try again.");
+      const lowerMessage = error.message.toLowerCase();
+      if (lowerMessage.includes("signups not allowed")) {
+        setError("User not found. Please create an account first.");
+      } else {
+        setError(error.message || "Failed to send OTP. Please check the number and try again.");
+      }
       return;
     }
 
