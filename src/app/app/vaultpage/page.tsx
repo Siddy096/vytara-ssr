@@ -64,6 +64,22 @@ export default function StaticVaultPage() {
       }
     };
     
+    const folderToLabel = (folder: string) => {
+      switch (folder) {
+        case "lab-reports":
+          return "Lab Reports";
+        case "prescriptions":
+          return "Prescriptions";
+        case "insurance":
+          return "Insurance";
+        case "bills":
+          return "Bills & Receipts";
+        default:
+          return "Others";
+      }
+    };
+
+
     const fetchDocuments = async () => {
       const { data, error } = await supabase.storage
         .from("medical-vault")
@@ -84,7 +100,7 @@ export default function StaticVaultPage() {
           return {
             id: item.id,
             name: item.name.split("/").pop() || item.name,
-            type: parts[1] || "Others",
+            type: folderToLabel(parts[1] || ""),
             filePath: item.name,
             uploadedAt: item.created_at || new Date().toLocaleString(),
           };
@@ -267,7 +283,7 @@ export default function StaticVaultPage() {
 
                         const userId = user.id;
 
-                        const filePath = `${userId}/${selectedType.toLowerCase()}/${Date.now()}-${selectedFile.name}`;
+                        const filePath = `${userId}/${folder}/${Date.now()}-${selectedFile.name}`;
                         
                         const { error } = await supabase.storage
                           .from("medical-vault")
