@@ -13,8 +13,8 @@ const PrivacyPolicyLayout = () => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
   const [activeSection, setActiveSection] = useState('intro');
-  const contentRef = useRef(null);
-  const sectionRefs = useRef({});
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const sections = [
     { id: 'intro', title: 'Introductory Text' },
@@ -29,7 +29,7 @@ const PrivacyPolicyLayout = () => {
     { id: 'cookies', title: 'Cookies and tracking technologies' },
   ];
 
-  const handleSectionClick = (sectionId) => {
+  const handleSectionClick = (sectionId: string) => {
     const element = sectionRefs.current[sectionId];
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +46,7 @@ const PrivacyPolicyLayout = () => {
       let smallestDistance = Infinity;
 
       Object.entries(sectionRefs.current).forEach(([id, element]) => {
-        if (!element) return;
+        if (!(element instanceof HTMLElement)) return;
         const distance = Math.abs(
           element.getBoundingClientRect().top - contentTop - 100
         );
@@ -422,5 +422,6 @@ return (
   </div>
 );
 };
+
 
 export default PrivacyPolicyLayout;
