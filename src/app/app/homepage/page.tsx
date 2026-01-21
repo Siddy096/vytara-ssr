@@ -112,10 +112,10 @@ useEffect(() => {
     }
 
     const { data, error } = await supabase
-      .from("profiles")
-      .select("personal")
+      .from("user_emergency_contacts")
+      .select("contacts")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Fetch personal error:", error);
@@ -123,22 +123,21 @@ useEffect(() => {
       return;
     }
 
-    const personal = data?.personal || {};
-    const existing: EmergencyContact[] = Array.isArray(personal.emergencyContact)
-      ? personal.emergencyContact
+    const existing: EmergencyContact[] = Array.isArray(data?.contacts)
+      ? data.contacts
       : [];
 
     const updatedContacts = [...existing, contact];
 
     const { error: updateErr } = await supabase
-      .from("profiles")
-      .update({
-        personal: {
-          ...personal,
-          emergencyContact: updatedContacts,
+      .from("user_emergency_contacts")
+      .upsert(
+        {
+          user_id: userId,
+          contacts: updatedContacts,
         },
-      })
-      .eq("user_id", userId);
+        { onConflict: "user_id" }
+      );
 
     if (updateErr) {
       console.error("Update personal error:", updateErr);
@@ -156,10 +155,10 @@ useEffect(() => {
     if (!confirmed) return;
 
     const { data, error } = await supabase
-      .from("profiles")
-      .select("personal")
+      .from("user_emergency_contacts")
+      .select("contacts")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Fetch personal error:", error);
@@ -167,22 +166,21 @@ useEffect(() => {
       return;
     }
 
-    const personal = data?.personal || {};
-    const existing: EmergencyContact[] = Array.isArray(personal.emergencyContact)
-      ? personal.emergencyContact
+    const existing: EmergencyContact[] = Array.isArray(data?.contacts)
+      ? data.contacts
       : [];
 
     const updatedContacts = existing.filter((_, idx) => idx !== indexToDelete);
 
     const { error: updateErr } = await supabase
-      .from("profiles")
-      .update({
-        personal: {
-          ...personal,
-          emergencyContact: updatedContacts,
+      .from("user_emergency_contacts")
+      .upsert(
+        {
+          user_id: userId,
+          contacts: updatedContacts,
         },
-      })
-      .eq("user_id", userId);
+        { onConflict: "user_id" }
+      );
 
     if (updateErr) {
       console.error("Update personal error:", updateErr);
@@ -292,21 +290,18 @@ useEffect(() => {
 
     async function fetchContacts() {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("personal")
+        .from("user_emergency_contacts")
+        .select("contacts")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Emergency fetch error:", error);
         return;
       }
 
-      if (data?.personal?.emergencyContact) {
-        setEmergencyContacts(data.personal.emergencyContact);
-      } else {
-        setEmergencyContacts([]);
-      }
+      const contacts = Array.isArray(data?.contacts) ? data.contacts : [];
+      setEmergencyContacts(contacts);
     }
 
     fetchContacts();
@@ -393,15 +388,31 @@ useEffect(() => {
             <button
               onClick={handleSOS}
               disabled={isSendingSOS}
-              className={`w-48 h-48 rounded-full ${
+              className={`relative w-48 h-48 rounded-full ${
                 isSendingSOS
                   ? "bg-red-400 cursor-not-allowed"
                   : "bg-red-500 hover:bg-red-600"
-              } text-white shadow-2xl flex flex-col items-center justify-center transition hover:scale-110 disabled:hover:scale-100`}
+              } text-white shadow-2xl flex items-center justify-center transition hover:scale-110 disabled:hover:scale-100 ${
+                isSendingSOS ? "" : "animate-sos-pulse"
+              }`}
             >
-              <AlertCircle size={64} />
-              <span className="text-4xl font-bold mt-4">
-                {isSendingSOS ? "Sending..." : "SOS"}
+              <span
+                className={`absolute -inset-6 rounded-full bg-red-500/50 blur-[52px] animate-sos-glow-slow ${
+                  isSendingSOS ? "opacity-0" : "opacity-100"
+                }`}
+                aria-hidden="true"
+              />
+              <span
+                className={`absolute -inset-2 rounded-full bg-red-500/60 blur-3xl animate-sos-glow ${
+                  isSendingSOS ? "opacity-0" : "opacity-100"
+                }`}
+                aria-hidden="true"
+              />
+              <span className="relative z-10 flex flex-col items-center justify-center">
+                <AlertCircle size={64} />
+                <span className="text-4xl font-bold mt-4">
+                  {isSendingSOS ? "Sending..." : "SOS"}
+                </span>
               </span>
             </button>
           </div>
@@ -543,6 +554,7 @@ function EmergencyModal({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [relation, setRelation] = useState("");
+  const contacts = Array.isArray(data) ? data : [];
 
   const resetForm = () => {
     setName("");
@@ -653,11 +665,11 @@ function EmergencyModal({
         </div>
       )}
 
-      {!data.length ? (
+      {!contacts.length && !showForm ? (
         <p className="text-slate-600">No emergency contacts found.</p>
       ) : (
         <div className="space-y-2">
-          {data.map((c, i) => (
+          {contacts.map((c, i) => (
             <div
               key={i}
               className="p-4 rounded-xl bg-slate-50 border hover:bg-slate-100 transition flex items-center justify-between gap-4"

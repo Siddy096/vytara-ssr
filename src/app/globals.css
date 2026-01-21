@@ -24,3 +24,57 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes sosGlow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+}
+
+@keyframes sosGlowSlow {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(0.94);
+    opacity: 0.35;
+  }
+}
+
+@keyframes sosPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-sos-glow {
+  animation: sosGlow 1.6s ease-in-out infinite;
+}
+
+.animate-sos-glow-slow {
+  animation: sosGlowSlow 2.6s ease-in-out infinite;
+}
+
+.animate-sos-pulse {
+  animation: sosPulse 1.8s ease-in-out infinite;
+}
