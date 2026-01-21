@@ -516,9 +516,11 @@ export default function VaultPage() {
   const [uploadData, setUploadData] = useState<{
     category: Category;
     file: File | null;
+    fileName: string;
   }>({
     category: 'lab-reports',
     file: null,
+    fileName: '',
   });
 
   /* ---------------- AUTH + FETCH ---------------- */
@@ -608,6 +610,13 @@ export default function VaultPage() {
 
   /* ---------------- UPLOAD ---------------- */
 
+  const stripExtension = (name: string) => name.replace(/\.[^/.]+$/, '');
+  const getExtension = (name: string) => {
+    const parts = name.split('.');
+    return parts.length > 1 ? parts.pop() ?? '' : '';
+  };
+  const sanitizeName = (name: string) => name.replace(/[\\/]/g, '-').trim();
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !uploadData.file) return;
@@ -620,14 +629,21 @@ export default function VaultPage() {
       all: 'reports',
     };
 
+    const originalExt = getExtension(uploadData.file.name);
+    const baseFromInput = sanitizeName(stripExtension(uploadData.fileName));
+    const fallbackBase = stripExtension(uploadData.file.name) || 'untitled';
+    const finalBase = baseFromInput || fallbackBase;
+    const finalName = originalExt ? `${finalBase}.${originalExt}` : finalBase;
+
     await uploadMedicalFile(
       userId,
       folderMap[uploadData.category],
-      uploadData.file
+      uploadData.file,
+      finalName
     );
 
     setShowUploadModal(false);
-    setUploadData({ category: 'lab-reports', file: null });
+    setUploadData({ category: 'lab-reports', file: null, fileName: '' });
     fetchFiles(userId, selectedCategory);
     fetchCounts(userId);
   };
@@ -1106,7 +1122,16 @@ export default function VaultPage() {
                   <input
                     type="file"
                     required
-                    onChange={(e) => setUploadData({ ...uploadData, file: e.target.files?.[0] || null })}
+                    onChange={(e) => {
+                      const nextFile = e.target.files?.[0] || null;
+                      setUploadData((prev) => ({
+                        ...prev,
+                        file: nextFile,
+                        fileName: nextFile
+                          ? stripExtension(nextFile.name)
+                          : prev.fileName,
+                      }));
+                    }}
                     className="hidden"
                     id="file-upload"
                   />
@@ -1125,6 +1150,25 @@ export default function VaultPage() {
                     )}
                   </label>
                 </div>
+              </div>
+
+              {/* File Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">File name</label>
+                <input
+                  type="text"
+                  value={uploadData.fileName}
+                  onChange={(e) =>
+                    setUploadData({ ...uploadData, fileName: e.target.value })
+                  }
+                  placeholder="e.g. 2024 Blood Test"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                />
+                {uploadData.file && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Extension will be kept as .{getExtension(uploadData.file.name) || 'file'}
+                  </p>
+                )}
               </div>
 
               <button

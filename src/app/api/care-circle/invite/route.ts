@@ -8,6 +8,17 @@ type InvitePayload = {
 };
 
 const normalizeContact = (value: string) => value.replace(/[^\d+]/g, '');
+const addIndiaCountryCode = (value: string) => {
+  const normalized = normalizeContact(value);
+  const digits = normalized.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+  if (!normalized.startsWith('+') && digits.startsWith('91') && digits.length === 12) {
+    return `+${digits}`;
+  }
+  return normalized;
+};
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
@@ -85,23 +96,32 @@ export async function POST(request: Request) {
   }
 
   if (!recipientId) {
-    const contactVariants = Array.from(
-      new Set([contact, normalizeContact(contact)].filter(Boolean))
-    );
-    const filters = contactVariants
-      .map((value) => `personal->>contactNumber.eq.${value}`)
-      .join(',');
-
-    const { data: profiles, error: profileError } = await adminClient
-      .from('profiles')
-      .select('user_id')
-      .or(filters);
-
-    if (profileError) {
-      return NextResponse.json({ message: profileError.message }, { status: 500 });
+    const normalized = normalizeContact(contact);
+    const withCountryCode = addIndiaCountryCode(contact);
+    const variants = new Set<string>();
+    if (contact) variants.add(contact);
+    if (normalized) variants.add(normalized);
+    if (withCountryCode) variants.add(withCountryCode);
+    if (normalized && !normalized.startsWith('+')) {
+      variants.add(`+${normalized}`);
+    }
+    if (normalized.startsWith('+')) {
+      variants.add(normalized.replace(/^\+/, ''));
     }
 
-    recipientId = profiles?.[0]?.user_id ?? null;
+    const { data: credentials, error: credentialsError } = await adminClient
+      .from('credentials')
+      .select('id')
+      .in('phone', Array.from(variants));
+
+    if (credentialsError) {
+      return NextResponse.json(
+        { message: credentialsError.message },
+        { status: 500 }
+      );
+    }
+
+    recipientId = credentials?.[0]?.id ?? null;
   }
 
   if (!recipientId) {
@@ -130,5 +150,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ recipientId });
 }
-
-

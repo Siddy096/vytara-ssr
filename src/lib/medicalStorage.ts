@@ -4,9 +4,12 @@ import { MedicalFolder } from '@/constants/medicalFolders';
 export async function uploadMedicalFile(
   userId: string,
   folder: MedicalFolder,
-  file: File
+  file: File,
+  fileName?: string
 ) {
-  const filePath = `${userId}/${folder}/${crypto.randomUUID()}-${file.name}`;
+  const rawName = fileName?.trim() || file.name;
+  const safeName = rawName.replace(/[\\/]/g, '-');
+  const filePath = `${userId}/${folder}/${safeName}`;
 
   return supabase.storage
     .from('medical-vault')
