@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Shield, UserPlus, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { UserPlus, Trash2, X } from 'lucide-react';
 import { supabase } from '@/lib/createClient';
 
-type CareCircleStatus = 'pending' | 'active' | 'revoked';
+type CareCircleStatus = 'pending' | 'accepted' | 'declined';
 
 type CareCircleMember = {
   id: string;
@@ -17,7 +17,6 @@ type CareCircleData = {
   ownerName: string;
   myCircleMembers: CareCircleMember[];
   circlesImIn: CareCircleMember[];
-  currentUserRole: 'owner' | 'admin' | 'member' | 'viewer';
 };
 
 type PendingInvite = {
@@ -32,78 +31,175 @@ export default function CareCirclePage() {
     ownerName: '',
     myCircleMembers: [],
     circlesImIn: [],
-    currentUserRole: 'viewer',
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteContact, setInviteContact] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [isSavingInvite, setIsSavingInvite] = useState(false);
 
-  useEffect(() => {
-    async function loadCareCircle() {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      const displayName =
-        user?.user_metadata?.full_name ??
-        user?.user_metadata?.name ??
-        user?.email?.split('@')[0] ??
-        'Your';
-      const circleName = `${displayName}'s Care Circle`;
+  const loadCareCircle = useCallback(async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      return;
+    }
+    const user = data.user;
+    const displayName =
+      user.user_metadata?.full_name ??
+      user.user_metadata?.name ??
+      user.email?.split('@')[0] ??
+      'Your';
+    const circleName = `${displayName}'s Care Circle`;
 
-      setCircleData({
-        circleName,
-        ownerName: displayName,
-        myCircleMembers: [],
-        circlesImIn: [],
-        currentUserRole: 'owner',
-      });
-      setCurrentUserId(user?.id ?? null);
+    setCurrentUserId(user.id);
+
+    const response = await fetch('/api/care-circle/links', {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return;
     }
 
-    loadCareCircle();
+    const linksData: {
+      outgoing: Array<{
+        id: string;
+        memberId: string;
+        status: CareCircleStatus;
+        displayName: string;
+        createdAt: string;
+      }>;
+      incoming: Array<{
+        id: string;
+        memberId: string;
+        status: CareCircleStatus;
+        displayName: string;
+        createdAt: string;
+      }>;
+    } = await response.json();
+
+    const myCircleMembers = linksData.outgoing.map((link) => ({
+      id: link.memberId,
+      name: link.displayName,
+      status: link.status,
+    }));
+
+    const circlesImIn = linksData.incoming.map((link) => ({
+      id: link.memberId,
+      name: link.displayName,
+      status: link.status,
+    }));
+
+    setPendingInvites(
+      linksData.outgoing
+        .filter((link) => link.status === 'pending')
+        .map((link) => ({
+          id: link.id,
+          contact: link.displayName,
+          sentAt: link.createdAt,
+        }))
+    );
+
+    setCircleData({
+      circleName,
+      ownerName: displayName,
+      myCircleMembers,
+      circlesImIn,
+    });
   }, []);
 
-  const isAdmin = useMemo(
-    () => ['owner', 'admin'].includes(circleData.currentUserRole),
-    [circleData.currentUserRole]
-  );
+  useEffect(() => {
+    loadCareCircle();
+  }, [loadCareCircle]);
 
-  const handleRemove = (memberId: string) => {
-    setCircleData((prev) => ({
-      ...prev,
-      myCircleMembers: prev.myCircleMembers.filter((member) => member.id !== memberId),
-    }));
+  const handleRemove = async (memberId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+    await supabase
+      .from('care_circle_links')
+      .delete()
+      .eq('requester_id', currentUserId)
+      .eq('recipient_id', memberId);
+    await loadCareCircle();
   };
 
-  const handleInviteSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleInviteSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = inviteContact.trim();
     if (!trimmed) {
       return;
     }
 
-    setPendingInvites((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        contact: trimmed,
-        sentAt: new Date().toISOString(),
+    if (!currentUserId) {
+      setInviteError('Please sign in again to send invites.');
+      return;
+    }
+
+    setIsSavingInvite(true);
+    setInviteError(null);
+
+    const response = await fetch('/api/care-circle/invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    ]);
+      body: JSON.stringify({ contact: trimmed }),
+    });
+
+    if (!response.ok) {
+      const errorPayload: { message?: string } = await response.json();
+      setInviteError(errorPayload.message ?? 'Unable to send invite.');
+      setIsSavingInvite(false);
+      return;
+    }
+
     setInviteContact('');
     setIsInviteOpen(false);
+    setIsSavingInvite(false);
+    await loadCareCircle();
+  };
+
+  const handleAcceptCircleInvite = async (memberId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+    await supabase
+      .from('care_circle_links')
+      .update({ status: 'accepted' })
+      .eq('recipient_id', currentUserId)
+      .eq('requester_id', memberId);
+    await loadCareCircle();
+  };
+
+  const handleDeclineCircleInvite = async (memberId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+    await supabase
+      .from('care_circle_links')
+      .update({ status: 'declined' })
+      .eq('recipient_id', currentUserId)
+      .eq('requester_id', memberId);
+    await loadCareCircle();
   };
 
   const activeMembers = useMemo(
     () =>
       circleData.myCircleMembers.filter(
-        (member) => member.status === 'active' && member.id !== currentUserId
+        (member) => member.status === 'accepted' && member.id !== currentUserId
       ),
     [circleData.myCircleMembers, currentUserId]
   );
 
+  const pendingCircleInvites = useMemo(
+    () => circleData.circlesImIn.filter((member) => member.status === 'pending'),
+    [circleData.circlesImIn]
+  );
+
   const activeCirclesImIn = useMemo(
-    () => circleData.circlesImIn.filter((member) => member.status === 'active'),
+    () => circleData.circlesImIn.filter((member) => member.status === 'accepted'),
     [circleData.circlesImIn]
   );
 
@@ -139,15 +235,9 @@ export default function CareCirclePage() {
             <div>
               <h2 className="text-2xl font-semibold text-slate-900">Members</h2>
               <p className="text-slate-500 text-sm">
-                Manage roles, invitations, and access for your care team.
+                Invite and remove members from your care circle.
               </p>
             </div>
-            {isAdmin && (
-              <div className="flex items-center gap-2 text-sm text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-4 py-2">
-                <Shield className="h-4 w-4" />
-                Admin controls enabled
-              </div>
-            )}
           </div>
 
           <div className="mt-6 space-y-6">
@@ -200,16 +290,14 @@ export default function CareCirclePage() {
                     <p className="text-base font-semibold text-slate-900">
                       {member.name}
                     </p>
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(member.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(member.id)}
+                      className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Remove
+                    </button>
                   </div>
                 ))
               )}
@@ -222,9 +310,47 @@ export default function CareCirclePage() {
                     Care Circles I&apos;m part of
                   </h3>
                   <p className="text-sm text-slate-500">
-                    Circles where you have access to help someone else.
+                    Accept or decline invites from other care circle owners.
                   </p>
                 </div>
+              </div>
+
+              <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+                <h4 className="text-sm font-semibold text-slate-700">
+                  Pending invites
+                </h4>
+                {pendingCircleInvites.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No pending invites right now.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {pendingCircleInvites.map((member) => (
+                      <li
+                        key={member.id}
+                        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-600 md:flex-row md:items-center md:justify-between"
+                      >
+                        <span>{member.name}</span>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptCircleInvite(member.id)}
+                            className="inline-flex items-center justify-center rounded-full bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-700"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeclineCircleInvite(member.id)}
+                            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {activeCirclesImIn.length === 0 ? (
@@ -277,6 +403,9 @@ export default function CareCirclePage() {
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </label>
+              {inviteError && (
+                <p className="text-sm text-rose-600">{inviteError}</p>
+              )}
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
@@ -287,9 +416,10 @@ export default function CareCirclePage() {
                 </button>
                 <button
                   type="submit"
+                  disabled={isSavingInvite}
                   className="inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
                 >
-                  Send invite
+                  {isSavingInvite ? 'Sending…' : 'Send invite'}
                 </button>
               </div>
             </form>
