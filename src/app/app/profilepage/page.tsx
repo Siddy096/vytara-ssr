@@ -8,6 +8,8 @@ import {
 import { supabase } from '@/lib/createClient';
 import { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Silk from '@/components/Silk';
+import jsPDF from 'jspdf';
 
 export default function ProfilePageUI() {
 
@@ -120,6 +122,139 @@ export default function ProfilePageUI() {
     setPersonalDraft((prev) => ({ ...prev, ...patch }));
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(20);
+    doc.text('Medical Information Report', 20, 30);
+
+    // Personal Information
+    doc.setFontSize(16);
+    doc.text('Personal Information', 20, 50);
+    doc.setFontSize(12);
+    doc.text(`Name: ${userName}`, 20, 65);
+    doc.text(`Gender: ${gender}`, 20, 75);
+    doc.text(`Date of Birth: ${dob}`, 20, 85);
+    doc.text(`Phone: ${phoneNumber}`, 20, 95);
+    doc.text(`Blood Group: ${bloodGroup}`, 20, 105);
+    doc.text(`Address: ${address}`, 20, 115);
+    doc.text(`BMI: ${bmi}`, 20, 125);
+    doc.text(`Age: ${age}`, 20, 135);
+
+    let yPosition = 155;
+
+    // Current Medical Status
+    doc.setFontSize(16);
+    doc.text('Current Medical Status', 20, yPosition);
+    yPosition += 15;
+    doc.setFontSize(12);
+
+    if (conditions.length > 0) {
+      doc.text('Current Diagnosed Conditions:', 20, yPosition);
+      yPosition += 10;
+      conditions.forEach(condition => {
+        doc.text(`- ${condition}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (allergy.length > 0) {
+      doc.text('Allergies:', 20, yPosition);
+      yPosition += 10;
+      allergy.forEach(allergyItem => {
+        doc.text(`- ${allergyItem}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (treatment.length > 0) {
+      doc.text('Ongoing Treatments:', 20, yPosition);
+      yPosition += 10;
+      treatment.forEach(treat => {
+        doc.text(`- ${treat}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (currentMedications.length > 0) {
+      doc.text('Current Medications:', 20, yPosition);
+      yPosition += 10;
+      currentMedications.forEach(med => {
+        doc.text(`- ${med.name} (${med.dosage}, ${med.frequency})`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    // Past Medical History
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 30;
+    }
+
+    doc.setFontSize(16);
+    doc.text('Past Medical History', 20, yPosition);
+    yPosition += 15;
+    doc.setFontSize(12);
+
+    if (previousDiagnosedCondition.length > 0) {
+      doc.text('Previous Diagnosed Conditions:', 20, yPosition);
+      yPosition += 10;
+      previousDiagnosedCondition.forEach(condition => {
+        doc.text(`- ${condition}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (pastSurgeries.length > 0) {
+      doc.text('Past Surgeries:', 20, yPosition);
+      yPosition += 10;
+      pastSurgeries.forEach(surgery => {
+        doc.text(`- ${surgery.name} (${formatMonthYear(surgery.month, surgery.year)})`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (childhoodIllness.length > 0) {
+      doc.text('Childhood Illnesses:', 20, yPosition);
+      yPosition += 10;
+      childhoodIllness.forEach(illness => {
+        doc.text(`- ${illness}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    if (longTermTreatments.length > 0) {
+      doc.text('Long Term Treatments:', 20, yPosition);
+      yPosition += 10;
+      longTermTreatments.forEach(treatment => {
+        doc.text(`- ${treatment}`, 30, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    // Family Medical History
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 30;
+    }
+
+    doc.setFontSize(16);
+    doc.text('Family Medical History', 20, yPosition);
+    yPosition += 15;
+    doc.setFontSize(12);
+
+    if (familyMedicalHistory.length > 0) {
+      familyMedicalHistory.forEach(history => {
+        doc.text(`${history.relation}: ${history.disease}`, 20, yPosition);
+        yPosition += 10;
+      });
+    }
+
+    // Save the PDF
+    doc.save('medical-information.pdf');
+  };
+
 useEffect(() => {
     async function fetchPersonalData(){
       if (!userId) return;
@@ -214,8 +349,26 @@ useEffect(() => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#003B46] via-[#006770] via-[#00838B] to-[#00A3A9] pb-10 font-sans">
-      
+    <div className="min-h-screen pb-10 font-sans relative">
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
+        <Silk
+          speed={5}
+          scale={1}
+          color="#2abec0"
+          noiseIntensity={1.5}
+          rotation={0}
+        />
+      </div>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
+        <Silk
+          speed={5}
+          scale={1}
+          color="#2abec0"
+          noiseIntensity={1.5}
+          rotation={0}
+        />
+      </div>
+
       {/* Navbar */}
       
 
@@ -230,12 +383,19 @@ useEffect(() => {
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-40 h-40 sm:w-64 sm:h-64 bg-gradient-to-br from-teal-50 to-orange-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-80 pointer-events-none"></div>
 
-            {/* Edit Button */}
+            {/* Edit and Export Buttons */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-              <button 
+              <button
+                onClick={exportToPDF}
+                className="p-2 bg-white/90 backdrop-blur text-gray-500 hover:text-[#FF8000] hover:bg-orange-50 rounded-full border border-gray-200 shadow-sm transition"
+                title="Export as PDF"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button
                 onClick={openPersonalInfoModal}
                 className="p-2 bg-white/90 backdrop-blur text-gray-500 hover:text-[#FF8000] hover:bg-orange-50 rounded-full border border-gray-200 shadow-sm transition"
-              >  
+              >
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
@@ -1337,3 +1497,4 @@ useEffect(() => {
     </div>
   );
 }
+
