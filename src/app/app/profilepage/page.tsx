@@ -8,8 +8,11 @@ import {
 import { supabase } from '@/lib/createClient';
 import { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+<<<<<<< HEAD
 import Silk from '@/components/Silk';
 import jsPDF from 'jspdf';
+=======
+>>>>>>> 27ff0e7cb329f96515e9ff6f0401315fe2b6da34
 
 export default function ProfilePageUI() {
 
@@ -122,6 +125,7 @@ export default function ProfilePageUI() {
     setPersonalDraft((prev) => ({ ...prev, ...patch }));
   };
 
+<<<<<<< HEAD
   const exportToPDF = () => {
     const doc = new jsPDF();
 
@@ -255,6 +259,8 @@ export default function ProfilePageUI() {
     doc.save('medical-information.pdf');
   };
 
+=======
+>>>>>>> 27ff0e7cb329f96515e9ff6f0401315fe2b6da34
 useEffect(() => {
     async function fetchPersonalData(){
       if (!userId) return;
@@ -349,6 +355,7 @@ useEffect(() => {
   }, [userId]);
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen pb-10 font-sans relative">
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
         <Silk
@@ -369,6 +376,10 @@ useEffect(() => {
         />
       </div>
 
+=======
+    <div className="min-h-screen bg-gradient-to-b from-[#003B46] via-[#006770] via-[#00838B] to-[#00A3A9] pb-10 font-sans">
+      
+>>>>>>> 27ff0e7cb329f96515e9ff6f0401315fe2b6da34
       {/* Navbar */}
       
 
@@ -383,6 +394,7 @@ useEffect(() => {
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-40 h-40 sm:w-64 sm:h-64 bg-gradient-to-br from-teal-50 to-orange-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-80 pointer-events-none"></div>
 
+<<<<<<< HEAD
             {/* Edit and Export Buttons */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               <button
@@ -396,6 +408,14 @@ useEffect(() => {
                 onClick={openPersonalInfoModal}
                 className="p-2 bg-white/90 backdrop-blur text-gray-500 hover:text-[#FF8000] hover:bg-orange-50 rounded-full border border-gray-200 shadow-sm transition"
               >
+=======
+            {/* Edit Button */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button 
+                onClick={openPersonalInfoModal}
+                className="p-2 bg-white/90 backdrop-blur text-gray-500 hover:text-[#FF8000] hover:bg-orange-50 rounded-full border border-gray-200 shadow-sm transition"
+              >  
+>>>>>>> 27ff0e7cb329f96515e9ff6f0401315fe2b6da34
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
