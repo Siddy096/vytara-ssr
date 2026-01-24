@@ -387,10 +387,9 @@ export default function ProfilePageUI() {
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               <button
                 onClick={exportToPDF}
-                className="p-2 bg-white/90 backdrop-blur text-gray-500 hover:text-[#FF8000] hover:bg-orange-50 rounded-full border border-gray-200 shadow-sm transition"
-                title="Export as PDF"
+                className="px-4 py-2 bg-teal-50 backdrop-blur text-teal-600 hover:text-teal-700 hover:bg-teal-100 rounded-lg border border-teal-200 shadow-sm transition text-sm font-medium"
               >
-                <Download className="w-4 h-4" />
+                Export as PDF
               </button>
               <button
                 onClick={openPersonalInfoModal}
