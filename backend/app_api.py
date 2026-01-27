@@ -30,7 +30,9 @@ CORS(app, resources={
             "http://localhost:3000",              # Local development
             "http://127.0.0.1:3000",              # Local development
             "https://vytara-official.vercel.app",       # ← REPLACE with your actual Vercel URL
-            "https://*.vercel.app"                # Allow all Vercel preview deployments
+            "https://*.vercel.app",           # Allow all Vercel preview deployments
+            "https://*.ngrok-free.app",      # Allow all ngrok-free.app tunnels
+            "https://*.ngrok.io"                # Allow all ngrok.io tunnels
         ],
         "methods": ["GET", "POST", "DELETE"],
         "allow_headers": ["Content-Type"]
