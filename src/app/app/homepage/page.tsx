@@ -3,19 +3,18 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/createClient";
-import { useRouter } from "next/navigation";
 import { AppointmentsModal } from "@/components/AppointmentsModal";
 import { EmergencyContactsModal, type EmergencyContact } from "@/components/EmergencyContactsModal";
 import { MedicalTeamModal, type Doctor } from "@/components/MedicalTeamModal";
 import { MedicationsModal, type Medication } from "@/components/MedicationsModal";
 import { MedicalSummaryModal } from "@/components/MedicalSummaryModal";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
 import {
   Calendar,
   Users,
   Stethoscope,
   Pill,
   AlertCircle,
-  Bell,
   X,
 } from "lucide-react";
 
@@ -31,18 +30,11 @@ type Appointment = {
   type: string;
 };
 
-type CareCircleInvite = {
-  id: string;
-  name: string;
-  createdAt: string;
-};
-
 /* =======================
    PAGE COMPONENT
 ======================= */
 
 export default function HomePage() {
-  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
@@ -51,9 +43,6 @@ export default function HomePage() {
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [medicalTeam, setMedicalTeam] = useState<Doctor[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [careCircleInvites, setCareCircleInvites] = useState<CareCircleInvite[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsError, setNotificationsError] = useState("");
   const [isSendingSOS, setIsSendingSOS] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [greeting, setGreeting] = useState("Good Morning");
@@ -235,60 +224,6 @@ export default function HomePage() {
   /* =======================
      FETCH CARE CIRCLE INVITES
   ======================= */
-
-  useEffect(() => {
-    if (!userId) return;
-    let isActive = true;
-
-    const fetchInvites = async () => {
-      setNotificationsLoading(true);
-      setNotificationsError("");
-      try {
-        const response = await fetch("/api/care-circle/links", {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error("Unable to load invites.");
-        }
-        const data: {
-          incoming?: Array<{
-            id: string;
-            status: string;
-            displayName: string;
-            createdAt: string;
-          }>;
-        } = await response.json();
-
-        if (!isActive) return;
-        const pendingIncoming =
-          data.incoming
-            ?.filter((invite) => invite.status === "pending")
-            .map((invite) => ({
-              id: invite.id,
-              name: invite.displayName,
-              createdAt: invite.createdAt,
-            })) ?? [];
-
-        setCareCircleInvites(pendingIncoming);
-      } catch {
-        if (!isActive) return;
-        setNotificationsError("Unable to load notifications.");
-        setCareCircleInvites([]);
-      } finally {
-        if (isActive) {
-          setNotificationsLoading(false);
-        }
-      }
-    };
-
-    fetchInvites();
-    const interval = setInterval(fetchInvites, 60_000);
-
-    return () => {
-      isActive = false;
-      clearInterval(interval);
-    };
-  }, [userId]);
 
   /* =======================
      APPOINTMENTS: ADD / UPDATE / DELETE
@@ -722,26 +657,6 @@ export default function HomePage() {
     }
   };
 
-  const formatInviteTimestamp = (value: string) => {
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return "Just now";
-
-    const now = new Date();
-    const diffMs = now.getTime() - parsed.getTime();
-    const diffMinutes = Math.floor(diffMs / 60000);
-
-    if (diffMinutes < 1) return "Just now";
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return parsed.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  };
-
   /* =======================
      UI
   ======================= */
@@ -802,60 +717,7 @@ export default function HomePage() {
             </div>
           </div>
         
-          {/* Notifications */}
-          <div className="hidden lg:flex justify-end">
-            <div className="bg-white rounded-3xl shadow-lg transition border w-full max-w-sm h-[420px] flex flex-col">
-              <div className="flex items-center gap-3 px-6 py-5 border-b">
-                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                  <Bell size={18} className="text-teal-600" />
-                </div>
-                <h3 className="font-bold text-lg">Notifications</h3>
-                {careCircleInvites.length > 0 && (
-                  <span className="ml-auto rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700">
-                    {careCircleInvites.length} new
-                  </span>
-                )}
-              </div>
-              {notificationsLoading ? (
-                <div className="flex-1 flex items-center justify-center px-6 py-4 text-sm text-slate-500">
-                  Checking for updates...
-                </div>
-              ) : notificationsError ? (
-                <div className="flex-1 flex items-center justify-center px-6 py-4 text-sm text-rose-600">
-                  {notificationsError}
-                </div>
-              ) : careCircleInvites.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center px-6 py-4 text-sm text-slate-500">
-                  No notifications yet
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                  {careCircleInvites.map((invite) => (
-                    <button
-                      key={invite.id}
-                      type="button"
-                      onClick={() => router.push("/app/carecircle?open=incoming-invites")}
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left transition hover:bg-white hover:shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">
-                            Care circle invite
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            From {invite.name}
-                          </p>
-                        </div>
-                        <span className="text-[11px] text-slate-400">
-                          {formatInviteTimestamp(invite.createdAt)}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <NotificationsPanel userId={userId} appointments={appointments} />
         </div>
 
         {/* MODALS */}
@@ -910,7 +772,7 @@ export default function HomePage() {
         {/* CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card
-            title="Calendar"
+            title="Appointments"
             icon={Calendar}
             onClick={() => setActiveSection("calendar")}
           />

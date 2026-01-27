@@ -586,7 +586,13 @@ export function AppointmentsModal({ appointments, onClose, onAddAppointment, onD
                     <input
                       type="text"
                       value={eventTime.minute}
-                      onChange={(e) => updateTime({ minute: clampTimePart(e.target.value, 59) })}
+                      onChange={(e) => {
+                        updateTime({ minute: clampTimePart(e.target.value, 59) });
+                      }}
+                      onBlur={() => {
+                        if (!eventTime.minute) return;
+                        updateTime({ minute: eventTime.minute.padStart(2, '0') });
+                      }}
                       placeholder="MM"
                       inputMode="numeric"
                       maxLength={2}

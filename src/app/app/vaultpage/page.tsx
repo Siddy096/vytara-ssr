@@ -648,10 +648,36 @@ export default function VaultPage() {
     return parts.length > 1 ? parts.pop() ?? '' : '';
   };
   const sanitizeName = (name: string) => name.replace(/[\\/]/g, '-').trim();
+  const isAllowedUploadType = (file: File) => {
+    if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+      return true;
+    }
+    const ext = getExtension(file.name).toLowerCase();
+    const allowedImageExtensions = new Set([
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'webp',
+      'bmp',
+      'svg',
+      'tif',
+      'tiff',
+      'heic',
+      'heif',
+      'avif',
+      'ico',
+    ]);
+    return ext === 'pdf' || allowedImageExtensions.has(ext);
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !uploadData.file) return;
+    if (!isAllowedUploadType(uploadData.file)) {
+      window.alert('Only PDF and image files are allowed.');
+      return;
+    }
 
     const folderMap: Record<Category, MedicalFolder> = {
       'lab-reports': 'reports',
@@ -1351,9 +1377,15 @@ export default function VaultPage() {
                 <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-teal-400 hover:bg-teal-50/30 transition cursor-pointer">
                   <input
                     type="file"
+                    accept="application/pdf,image/*"
                     required
                     onChange={(e) => {
                       const nextFile = e.target.files?.[0] || null;
+                      if (nextFile && !isAllowedUploadType(nextFile)) {
+                        window.alert('Only PDF and image files are allowed.');
+                        e.target.value = '';
+                        return;
+                      }
                       setUploadData((prev) => ({
                         ...prev,
                         file: nextFile,
