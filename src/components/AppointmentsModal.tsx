@@ -299,8 +299,8 @@ export function AppointmentsModal({ appointments, onClose, onAddAppointment, onD
   const currentTypeFields = eventForm.type ? appointmentTypeFields[eventForm.type as keyof typeof appointmentTypeFields] || [] : [];
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden border border-slate-200 flex flex-col">
+    <div className="fixed inset-0 flex items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:pt-4 md:pb-4 z-50">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[calc(100vh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] md:max-h-[90vh] overflow-hidden border border-slate-200 flex flex-col">
         {/* Header */}
         <div className="bg-white p-6 border-b border-slate-200 flex justify-between items-center rounded-t-3xl">
           <h2 className="text-2xl font-bold text-slate-900">Upcoming Appointments</h2>
