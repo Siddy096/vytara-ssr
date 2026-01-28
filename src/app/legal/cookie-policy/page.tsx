@@ -258,7 +258,7 @@ const CookiePolicyLayout = () => {
           {/* Header */}
           <div className="mb-12">
             <p className="text-sm text-gray-600 mb-4">
-              Last updated: 17 Januaray 2026
+              Last updated: 20 Januaray 2026
             </p>
             <h1 className="text-5xl font-serif text-black mb-8">Vytara Cookie Policy</h1>
           </div>
@@ -456,5 +456,6 @@ Further information about cookies, including how to see what cookies have been s
 };
 
 export default CookiePolicyLayout;
+
 
 
