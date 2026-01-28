@@ -62,6 +62,7 @@ const CookieTypesTable = () => {
 
 const CookiePolicyLayout = () => {
   const [menu, setMenu] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
 
   const nav = (id: string) => {
     setMenu(false);
@@ -87,6 +88,7 @@ const CookiePolicyLayout = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setActiveSection(sectionId);
+      setTocOpen(false);
     }
   };
 
@@ -178,7 +180,7 @@ const CookiePolicyLayout = () => {
       </nav>
       <div className="flex bg-white">
       {/* Left Sidebar - Table of Contents */}
-      <div className="w-72 border-r border-gray-300 overflow-y-auto">
+      <div className="hidden w-72 border-r border-gray-300 overflow-y-auto md:block">
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-6 text-black">Contents</h2>
           <nav className="space-y-3">
@@ -199,12 +201,60 @@ const CookiePolicyLayout = () => {
         </div>
       </div>
 
+      {tocOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            type="button"
+            aria-label="Close contents menu"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setTocOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-lg">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 className="text-lg font-semibold text-black">Contents</h2>
+              <button
+                type="button"
+                aria-label="Close contents"
+                className="text-gray-600"
+                onClick={() => setTocOpen(false)}
+              >
+                <X />
+              </button>
+            </div>
+            <nav className="space-y-3 px-6 py-4">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => handleSectionClick(section.id)}
+                  className={`block w-full text-left px-3 py-2 rounded transition-colors ${
+                    activeSection === section.id
+                      ? 'text-[#14b8a6] font-semibold bg-[#14b8a6]/10'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  {section.title}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
       {/* Right Content Area */}
       <div
         ref={contentRef}
         className="flex-1 overflow-y-auto"
       >
         <div className="max-w-4xl mx-auto px-8 py-8">
+          <div className="mb-6 flex justify-end md:hidden">
+            <button
+              type="button"
+              onClick={() => setTocOpen(true)}
+              className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-[#134E4A]"
+            >
+              Contents
+            </button>
+          </div>
           {/* Header */}
           <div className="mb-12">
             <p className="text-sm text-gray-600 mb-4">
